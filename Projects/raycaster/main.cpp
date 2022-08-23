@@ -258,6 +258,7 @@ int main()
                     hit_delta.y * sin(player.rotation);
 
                 int shading = int(128.0 * dist / 900);
+                shading = 0; // TODO: убрать
 
                 float rect_h = (cell_size * screenHeight) / dist;
                 float rect_w = (screenWidth / player.fov) * delta_angle;
@@ -299,6 +300,7 @@ int main()
                     int ty = player.pos.y / 2 + sinf(hit.angle) * magic * floor_texture.height / dy / raFix;
 
                     shading = int(1.0 / float(row) * screenHeight * 28);
+                    shading = 0; // TODO: убрать
 
                     int fw = floor_texture.width;
                     Color* floor_data = (Color*)floor_texture.data;
