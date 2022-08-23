@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.0)
+project (raylib)
+
+if(APPLE)
+    add_library(raylib STATIC IMPORTED GLOBAL)
+    set_target_properties(raylib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/macos-arm64/libraylib.a)
+    set_target_properties(raylib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(raylib INTERFACE "-framework CoreVideo")
+    target_link_libraries(raylib INTERFACE "-framework CoreAudio")
+    target_link_libraries(raylib INTERFACE "-framework IOKit")
+    target_link_libraries(raylib INTERFACE "-framework Cocoa")
+    target_link_libraries(raylib INTERFACE "-framework OpenGL")
+    target_link_libraries(raylib INTERFACE m)
+endif()
+

@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.0)
+project(cc-2022)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT cc-2022)
+add_subdirectory(Libraries)
+add_subdirectory(Projects)
