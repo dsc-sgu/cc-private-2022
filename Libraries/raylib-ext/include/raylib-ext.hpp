@@ -2,6 +2,7 @@
 #define RAYLIB_EXT_HPP
 
 #include <string>
+#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <rlgl.h>
@@ -29,6 +30,7 @@ Vector2& operator+=(Vector2 &v1, const Vector2 &v2) noexcept;
 Vector2& operator-=(Vector2 &v1, const Vector2 &v2) noexcept;
 Vector2& operator*=(Vector2 &v, const float &f) noexcept;
 Vector2& operator/=(Vector2 &v, const float &f);
+std::ostream& operator<<(std::ostream &stream, Vector2 &v) noexcept;
 
 /* Vector3 */
 
@@ -42,6 +44,7 @@ Vector3& operator+=(Vector3 &v1, const Vector3 &v2) noexcept;
 Vector3& operator-=(Vector3 &v1, const Vector3 &v2) noexcept;
 Vector3& operator*=(Vector3 &v, const float &f) noexcept;
 Vector3& operator/=(Vector3 &v, const float &f);
+std::ostream& operator<<(std::ostream &stream, Vector3 &v) noexcept;
 
 /* Vector4/Quaternion */
 
@@ -55,6 +58,7 @@ Vector4& operator+=(Vector4 &v1, const Vector4 &v2) noexcept;
 Vector4& operator-=(Vector4 &v1, const Vector4 &v2) noexcept;
 Vector4& operator*=(Vector4 &v, const float &f) noexcept;
 Vector4& operator/=(Vector4 &v, const float &f);
+std::ostream& operator<<(std::ostream &stream, Vector4 &v) noexcept;
 
 /* Matrix */
 

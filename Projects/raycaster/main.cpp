@@ -2,6 +2,7 @@
 #include <raylib-ext.hpp>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 const int screenWidth = 640;
 const int screenHeight = 640;
@@ -22,12 +23,12 @@ int board[board_w][board_h] = {
     { 1, 1, 1, 1, 1, 1, 1, 1 },
 };
 
-Image floor_texture = LoadImage("./Assets/textures/FLOOR_1A.png");
+Image floor_texture = LoadImage("./Assets/textures/floortile.png");
 Image ceiling_texture = LoadImage("./Assets/textures/LIGHT_1C.png");
 Image images[] = {
     LoadImage("./Assets/textures/TECH_1A.png"), // NULL
-    LoadImage("./Assets/textures/TECH_1A.png"),
-    LoadImage("./Assets/textures/SUPPORT_3.png"),
+    LoadImage("./Assets/textures/walltile.png"),
+    LoadImage("./Assets/textures/walltile2.png"),
 };
 
 struct player_t {
@@ -153,6 +154,15 @@ check_collision(Vector2 position, float radius)
     return false;
 }
 
+Vector2
+sample_point(Vector2 p)
+{
+    Vector2 cell = p / cell_size;
+    cell.x -= int(cell.x);
+    cell.y -= int(cell.y);
+    return cell;
+}
+
 int main()
 {
     InitWindow(screenWidth * 2, screenHeight, "GDSC: Creative Coding");
@@ -162,15 +172,27 @@ int main()
     player.pos = { screenWidth / 2, screenHeight / 2 };
     player.speed = 100;
     player.rotation = 0;
-    player.fov = 60;
+    player.fov = 60 * DEG2RAD;
     player.rays_count = 240;
     float delta_angle = player.fov / player.rays_count;
+    float rect_w = (screenWidth / player.fov) * delta_angle;
 
     bool mouse_2d = false;
 
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+
+        if (IsKeyDown(KEY_E))
+        {
+            player.fov += 1 * DEG2RAD;
+            delta_angle = player.fov / player.rays_count;
+        }
+        if (IsKeyDown(KEY_Q))
+        {
+            player.fov -= 1 * DEG2RAD;
+            delta_angle = player.fov / player.rays_count;
+        }
 
         Vector2 move = { 0, 0 };
         if (mouse_2d)
@@ -215,7 +237,7 @@ int main()
         BeginDrawing();
         {
             ClearBackground(BLACK);
-            
+
             DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, BLACK);
 
             for (int row = 0; row < board_h; ++row) {
@@ -245,7 +267,7 @@ int main()
 
             std::vector<hit_t> hits;
             for (float angle = -player.fov / 2; angle < player.fov / 2; angle += delta_angle) {
-                hit_t hit = cast_ray(player.pos, player.rotation + angle * DEG2RAD);
+                hit_t hit = cast_ray(player.pos, player.rotation + angle);
                 DrawLineEx(player.pos, hit.pos, 2, BLUE);
                 hits.push_back(hit);
             }
@@ -261,7 +283,6 @@ int main()
                 shading = 0; // TODO: убрать
 
                 float rect_h = (cell_size * screenHeight) / dist;
-                float rect_w = (screenWidth / player.fov) * delta_angle;
                 float rect_y = (screenHeight - rect_h) / 2;
 
                 int image_idx = board[hit.cell_pos.x][hit.cell_pos.y];
@@ -276,7 +297,9 @@ int main()
                 int col = column.y;
                 if (hit.is_horizontal)
                     col = column.x;
-                
+
+                float pix_h = rect_h / cell_image.height;
+
                 for (int i = 0; i < cell_image.height; ++i)
                 {
                     Color* color_data = (Color*)cell_image.data;
@@ -286,42 +309,68 @@ int main()
                     pixel.b = std::clamp(pixel.b - shading, 0, 255);
 
                     DrawRectangle(
-                        screenWidth + rect_x, rect_y + rect_h / cell_image.height * i,
-                        rect_w + 1, rect_h / cell_image.height + 1, pixel
+                        screenWidth + rect_x, rect_y + pix_h * i,
+                        rect_w + 1, pix_h + 1, pixel
                     );
                 }
 
-                for (int row = rect_y + rect_h; row < screenHeight; ++row)
+                /* Draw floor and ceiling */
+                float near_plane = 0.05;
+                float far_plane = 50;
+
+                float floor_length = screenHeight - (rect_y + rect_h);
+                float ceiling_length = floor_length;
+
+                Vector2 ray = Vector2Normalize(hit_delta) * dist;
+
+                float floor_base = rect_y + rect_h;
+                Color* floor_data = (Color*)floor_texture.data;
+                int fw = floor_texture.width;
+
+                Vector2 far_left = Vector2 {
+                    cosf(player.rotation - player.fov / 2),
+                    sinf(player.rotation - player.fov / 2),
+                } * far_plane + player.pos;
+                Vector2 far_right = Vector2 {
+                    cosf(player.rotation + player.fov / 2),
+                    sinf(player.rotation + player.fov / 2),
+                } * far_plane + player.pos;
+
+                Vector2 near_left = Vector2 {
+                    cosf(player.rotation - player.fov / 2),
+                    sinf(player.rotation - player.fov / 2),
+                } * near_plane + player.pos;
+                Vector2 near_right = Vector2 {
+                    cosf(player.rotation + player.fov / 2),
+                    sinf(player.rotation + player.fov / 2),
+                } * near_plane + player.pos;
+
+                for (float y = 0; y <= floor_length; y += pix_h)
                 {
-                    float dy = row - screenHeight / 2;
-                    float raFix = cosf(fix_angle(player.rotation - hit.angle));
-                    int magic = 200;
-                    int tx = player.pos.x / 2 + cosf(hit.angle) * magic * floor_texture.width / dy / raFix;
-                    int ty = player.pos.y / 2 + sinf(hit.angle) * magic * floor_texture.height / dy / raFix;
+                    float depth = 1 - (floor_length - y) / (screenHeight / 2.0);
+                    float magic = tanf(player.fov / 2) / player.fov;
+                    depth *= magic;
 
-                    shading = int(1.0 / float(row) * screenHeight * 28);
-                    shading = 0; // TODO: убрать
+                    Vector2 start = (far_left - near_left) / depth + near_left;
+                    Vector2 end = (far_right - near_right) / depth + near_right;
 
-                    int fw = floor_texture.width;
-                    Color* floor_data = (Color*)floor_texture.data;
-                    Color floor_pixel = floor_data[(ty & (fw - 1)) * fw + (tx & (fw - 1))];
-                    floor_pixel.r = std::clamp(floor_pixel.r - shading, 0, 255);
-                    floor_pixel.g = std::clamp(floor_pixel.g - shading, 0, 255);
-                    floor_pixel.b = std::clamp(floor_pixel.b - shading, 0, 255);
+                    float sample_width = (float) rect_x / (float) screenWidth;
+                    Vector2 position = (end - start) * sample_width + start;
+                    Vector2 sample = sample_point(position) * fw;
+
+                    Color pixel = floor_data[int(sample.x) * fw + int(sample.y)];
                     DrawRectangle(
-                        screenWidth + rect_x, row + rect_h / floor_texture.height,
-                        rect_w + 1, rect_h / floor_texture.height + 1, floor_pixel
+                        screenWidth + rect_x, floor_base + y,
+                        rect_w + 1, pix_h + 1, pixel
                     );
+                }
 
-                    int cw = ceiling_texture.width;
-                    Color* ceiling_data = (Color*)ceiling_texture.data;
-                    Color ceiling_pixel = ceiling_data[(ty & (cw - 1)) * cw + (tx & (cw - 1))];
-                    ceiling_pixel.r = std::clamp(ceiling_pixel.r - shading, 0, 255);
-                    ceiling_pixel.g = std::clamp(ceiling_pixel.g - shading, 0, 255);
-                    ceiling_pixel.b = std::clamp(ceiling_pixel.b - shading, 0, 255);
+                float ceiling_base = rect_y - pix_h;
+                for (float y = 0; y <= ceiling_length; y += pix_h)
+                {
                     DrawRectangle(
-                        screenWidth + rect_x, screenHeight - row - rect_h / ceiling_texture.height,
-                        rect_w + 1, rect_h / ceiling_texture.height + 1, ceiling_pixel
+                        screenWidth + rect_x, ceiling_base - y,
+                        rect_w + 1, pix_h + 1, BLUE
                     );
                 }
 

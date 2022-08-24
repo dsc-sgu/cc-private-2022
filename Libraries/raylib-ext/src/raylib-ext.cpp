@@ -85,6 +85,14 @@ operator/=(Vector2 &v, const float &f)
     return v;
 }
 
+std::ostream&
+operator<<(std::ostream &stream, Vector2 &v)
+noexcept
+{
+    stream << "{ " << v.x << ", " << v.y << " }";
+    return stream;
+}
+
 /* Vector3 */
 
 bool
@@ -165,6 +173,14 @@ operator/=(Vector3 &v, const float &f)
     v.y /= f;
     v.z /= f;
     return v;
+}
+
+std::ostream&
+operator<<(std::ostream &stream, Vector3 &v)
+noexcept
+{
+    stream << "{ " << v.x << ", " << v.y << ", " << v.z << " }";
+    return stream;
 }
 
 /* Vector4/Quaternion */
@@ -251,6 +267,14 @@ operator/=(Vector4 &v, const float &f)
     v.z /= f;
     v.w /= f;
     return v;
+}
+
+std::ostream&
+operator<<(std::ostream &stream, Vector4 &v)
+noexcept
+{
+    stream << "{ " << v.x << ", " << v.y << ", " << v.z << ", " << v.w << " }";
+    return stream;
 }
 
 /* Matrix */
