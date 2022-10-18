@@ -20,14 +20,14 @@ noexcept
     return v1.x == v2.x && v1.y == v2.y;
 }
 
-Vector2 
+Vector2
 operator+(const Vector2 &v1, const Vector2 &v2)
 noexcept
 {
     return Vector2Add(v1, v2);
 }
 
-Vector2 
+Vector2
 operator-(const Vector2 &v1, const Vector2 &v2)
 noexcept
 {
@@ -41,14 +41,14 @@ noexcept
     return Vector2Negate(v);
 }
 
-Vector2 
+Vector2
 operator*(const Vector2 &v, const float &f)
 noexcept
 {
     return Vector2Scale(v, f);
 }
 
-Vector2 
+Vector2
 operator/(const Vector2 &v, const float &f)
 {
     return Vector2Scale(v, 1 / f);
@@ -106,14 +106,14 @@ noexcept
     return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
-Vector3 
+Vector3
 operator+(const Vector3 &v1, const Vector3 &v2)
 noexcept
 {
     return Vector3Add(v1, v2);
 }
 
-Vector3 
+Vector3
 operator-(const Vector3 &v1, const Vector3 &v2)
 noexcept
 {
@@ -127,14 +127,14 @@ noexcept
     return Vector3Negate(v);
 }
 
-Vector3 
+Vector3
 operator*(const Vector3 &v, const float &f)
 noexcept
 {
     return Vector3Scale(v, f);
 }
 
-Vector3 
+Vector3
 operator/(const Vector3 &v, const float &f)
 {
     return Vector3Scale(v, 1 / f);
@@ -196,14 +196,14 @@ noexcept
     return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
-Vector4 
+Vector4
 operator+(const Vector4 &v1, const Vector4 &v2)
 noexcept
 {
     return QuaternionAdd(v1, v2);
 }
 
-Vector4 
+Vector4
 operator-(const Vector4 &v1, const Vector4 &v2)
 noexcept
 {
@@ -217,14 +217,14 @@ noexcept
     return QuaternionScale(v, -1);
 }
 
-Vector4 
+Vector4
 operator*(const Vector4 &v, const float &f)
 noexcept
 {
     return QuaternionScale(v, f);
 }
 
-Vector4 
+Vector4
 operator/(const Vector4 &v, const float &f)
 {
     return QuaternionScale(v, 1 / f);
@@ -283,21 +283,21 @@ noexcept
 
 /* Matrix */
 
-Matrix 
+Matrix
 operator+(const Matrix &m1, const Matrix &m2)
 noexcept
 {
     return MatrixAdd(m1, m2);
 }
 
-Matrix 
+Matrix
 operator-(const Matrix &m1, const Matrix &m2)
 noexcept
 {
     return MatrixSubtract(m1, m2);
 }
 
-Matrix 
+Matrix
 operator*(const Matrix &m1, const Matrix &m2)
 noexcept
 {
@@ -432,8 +432,8 @@ std::ostream&
 operator<<(std::ostream &stream, Color &c)
 noexcept
 {
-    stream << "Color { " 
-           << c.r << ", " 
+    stream << "Color { "
+           << c.r << ", "
            << c.g << ", "
            << c.b << ", "
            << c.a << " }";
@@ -442,13 +442,13 @@ noexcept
 
 /* Core */
 
-void 
+void
 InitWindow(int width, int height, const std::string &title)
 {
     InitWindow(width, height, title.c_str());
 }
 
-void 
+void
 SetWindowTitle(const std::string &title)
 {
     SetWindowTitle(title.c_str());
@@ -484,7 +484,7 @@ GetShaderLocationAttrib(Shader shader, const std::string &attribName)
     return GetShaderLocationAttrib(shader, attribName.c_str());
 }
 
-void 
+void
 TakeScreenshot(const std::string &fileName)
 {
     TakeScreenshot(fileName.c_str());
@@ -589,7 +589,7 @@ LoadImage(const std::string &fileName)
 }
 
 Image
-LoadImageRaw(const std::string &fileName, int width, int height, int format, 
+LoadImageRaw(const std::string &fileName, int width, int height, int format,
              int headerSize)
 {
     return LoadImageRaw(fileName.c_str(), width, height, format, headerSize);

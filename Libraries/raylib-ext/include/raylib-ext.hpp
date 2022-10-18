@@ -82,10 +82,10 @@ std::ostream& operator<<(std::ostream &stream, Color &c) noexcept;
 
 /* Core */
 
-void 
+void
 InitWindow(int width, int height, const std::string &title);
 
-void 
+void
 SetWindowTitle(const std::string &title);
 
 void
@@ -103,7 +103,7 @@ GetShaderLocation(Shader shader, const std::string &uniformName);
 int
 GetShaderLocationAttrib(Shader shader, const std::string &attribName);
 
-void 
+void
 TakeScreenshot(const std::string &fileName);
 
 unsigned char *
@@ -157,7 +157,7 @@ Image
 LoadImage(const std::string &fileName);
 
 Image
-LoadImageRaw(const std::string &fileName, int width, int height, int format, 
+LoadImageRaw(const std::string &fileName, int width, int height, int format,
              int headerSize);
 
 Image
