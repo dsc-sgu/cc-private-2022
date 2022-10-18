@@ -173,7 +173,8 @@ int main()
     player.speed = 100;
     player.rotation = 0;
     player.fov = 60 * DEG2RAD;
-    player.rays_count = 240;
+    // player.rays_count = 240;
+    player.rays_count = 32;
     float delta_angle = player.fov / player.rays_count;
     float rect_w = (screenWidth / player.fov) * delta_angle;
 
@@ -260,9 +261,9 @@ int main()
 
         BeginDrawing();
         {
-            ClearBackground(SKYBLUE);
+            ClearBackground(BLACK);
 
-            DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, BEIGE);
+            DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, BLACK);
 
             for (int row = 0; row < board_h; ++row) {
                 for (int col = 0; col < board_w; ++col) {
@@ -337,6 +338,106 @@ int main()
                         rect_w + 1, pix_h + 1, pixel
                     );
                 }
+
+                /* Draw floor and ceiling */
+#if 0
+                float floor_length = screenHeight - (rect_y + rect_h);
+                float ceiling_length = floor_length;
+
+                Vector2 ray = Vector2Normalize(hit_delta) * dist;
+
+                float floor_base = rect_y + rect_h;
+                Color* floor_data = (Color*)floor_texture.data;
+                int fw = floor_texture.width;
+
+                Vector2 far_left = Vector2 {
+                    cosf(player.rotation - player.fov / 2),
+                    sinf(player.rotation - player.fov / 2),
+                } * far_plane + player.pos;
+                Vector2 far_right = Vector2 {
+                    cosf(player.rotation + player.fov / 2),
+                    sinf(player.rotation + player.fov / 2),
+                } * far_plane + player.pos;
+
+                Vector2 near_left = Vector2 {
+                    cosf(player.rotation - player.fov / 2),
+                    sinf(player.rotation - player.fov / 2),
+                } * near_plane + player.pos;
+                Vector2 near_right = Vector2 {
+                    cosf(player.rotation + player.fov / 2),
+                    sinf(player.rotation + player.fov / 2),
+                } * near_plane + player.pos;
+
+                for (float y = 0; y <= floor_length; y += pix_h)
+                {
+                    float depth = 1 - (floor_length - y) / (screenHeight / 2.0);
+                    float magic = tanf(player.fov / 2) / player.fov;
+                    depth *= magic;
+
+                    Vector2 start = (far_left - near_left) / depth + near_left;
+                    Vector2 end = (far_right - near_right) / depth + near_right;
+
+                    float sample_width = (float) rect_x / (float) screenWidth;
+                    Vector2 position = (end - start) * sample_width + start;
+                    Vector2 sample = sample_point(position) * fw;
+
+                    Color pixel = floor_data[int(sample.x) * fw + int(sample.y)];
+                    DrawRectangle(
+                        screenWidth + rect_x, floor_base + y,
+                        rect_w + 1, pix_h + 1, pixel
+                    );
+                }
+
+                float ceiling_base = rect_y - pix_h;
+                for (float y = 0; y <= ceiling_length; y += pix_h)
+                {
+                    DrawRectangle(
+                        screenWidth + rect_x, ceiling_base - y,
+                        rect_w + 1, pix_h + 1, BLUE
+                    );
+                }
+#endif
+#if 1
+                float floor_length = screenHeight - (rect_y + rect_h);
+                float ceiling_length = floor_length;
+
+                Vector2 ray = Vector2Normalize(hit_delta);
+
+                float floor_base = rect_y + rect_h;
+                Color* floor_data = (Color*)floor_texture.data;
+                int fw = floor_texture.width;
+
+                for (float y = 0; y <= floor_length; y += pix_h)
+                {
+                    float depth = 1 - (floor_base + y - screenHeight / 2.0) / (screenHeight / 2.0);
+                    float angle = depth * (PI / 2.0);
+                    Vector2 position = player.pos + ray * tan(angle) * (rect_h / 2.0 + y);
+                    Vector2 sample = sample_point(position) * fw;
+                    // std::cout << position << std::endl;
+
+                    Color pixel = floor_data[int(sample.x) * fw + int(sample.y)];
+                    if (fabs(hit.angle - player.rotation) < 0.01)
+                    {
+                        pixel = YELLOW;
+                        DrawLineEx(player.pos, hit.pos, 2, RED);
+                        DrawCircleV(position, 2, RED);
+                    }
+                    // Color pixel = RED;
+                    DrawRectangle(
+                        screenWidth + rect_x, floor_base + y,
+                        rect_w + 1, pix_h + 1, pixel
+                    );
+                }
+
+                float ceiling_base = rect_y - pix_h;
+                for (float y = 0; y <= ceiling_length; y += pix_h)
+                {
+                    DrawRectangle(
+                        screenWidth + rect_x, ceiling_base - y,
+                        rect_w + 1, pix_h + 1, BLUE
+                    );
+                }
+#endif
 
                 rect_x += rect_w;
             }
