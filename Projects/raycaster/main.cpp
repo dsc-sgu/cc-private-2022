@@ -1,8 +1,9 @@
-#define RAYEXT_IMPLEMENTATION
 #include <raylib-ext.hpp>
 #include <algorithm>
 #include <vector>
 #include <iostream>
+
+#define RUN_RAYCASTER
 
 const int screenWidth = 640;
 const int screenHeight = 640;
@@ -23,16 +24,59 @@ int board[board_w][board_h] = {
     { 1, 1, 1, 1, 1, 1, 1, 1 },
 };
 
-Image images[] = {
-    LoadImage("./Assets/textures/TECH_1A.png"), // NULL
-    LoadImage("./Assets/textures/walltile.png"),
-    LoadImage("./Assets/textures/walltile2.png"),
-};
-
 struct player_t {
     Vector2 pos;
     float rotation;
     float speed;
+};
+
+bool
+check_collision(Vector2 position, float radius)
+{
+    for (float angle = -PI; angle < PI; angle += PI / 4)
+    {
+        Vector2 check = position + Vector2Rotate({ radius, 0 }, angle);
+        int cell_x = check.x / cell_size;
+        int cell_y = check.y / cell_size;
+        if (board[cell_x][cell_y] != 0)
+            return true;
+    }
+    return false;
+}
+
+void
+DrawTopDownView(const player_t &player)
+{
+    for (int row = 0; row < board_h; ++row) {
+        for (int col = 0; col < board_w; ++col) {
+            if (board[col][row] != 0) {
+                DrawRectangle(col * cell_size, row * cell_size,
+                    cell_size, cell_size, BLACK);
+            }
+            else
+            {
+                DrawRectangle(col * cell_size, row * cell_size,
+                    cell_size, cell_size, WHITE);
+            }
+        }
+    }
+
+    for (int x = cell_size; x < screenWidth; x += cell_size) {
+        DrawLine(x, 0, x, screenHeight, GRAY);
+    }
+    for (int y = cell_size; y < screenHeight; y += cell_size) {
+        DrawLine(0, y, screenWidth, y, GRAY);
+    }
+
+    DrawCircleV(player.pos, 14, RED);
+    DrawLineEx(player.pos, player.pos + Vector2Rotate({ 1,0 }, player.rotation) * 25, 5, BLUE);
+}
+
+#ifdef RUN_RAYCASTER
+Image images[] = {
+    LoadImage("./Assets/textures/TECH_1A.png"), // NULL
+    LoadImage("./Assets/textures/walltile.png"),
+    LoadImage("./Assets/textures/walltile2.png"),
 };
 
 struct hit_t {
@@ -42,12 +86,13 @@ struct hit_t {
     float angle;
 };
 
-bool correct_cell(int x, int y)
+inline bool
+correct_cell(int x, int y)
 {
     return (x >= 0 && x < board_w) && (y >= 0 && y < board_h);
 }
 
-float
+inline float
 fix_angle(float angle)
 {
     while (angle > PI)  angle -= 2 * PI;
@@ -136,29 +181,6 @@ hit_t cast_ray(Vector2 pos, float dir)
     }
 }
 
-bool
-check_collision(Vector2 position, float radius)
-{
-    for (float angle = -PI; angle < PI; angle += PI / 4)
-    {
-        Vector2 check = position + Vector2Rotate({ radius, 0 }, angle);
-        int cell_x = check.x / cell_size;
-        int cell_y = check.y / cell_size;
-        if (board[cell_x][cell_y] != 0)
-            return true;
-    }
-    return false;
-}
-
-Vector2
-sample_point(Vector2 p)
-{
-    Vector2 cell = p / cell_size;
-    cell.x -= int(cell.x);
-    cell.y -= int(cell.y);
-    return cell;
-}
-
 struct RaycastConfig
 {
     float fov;
@@ -216,38 +238,15 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
         rect_x += config.rect_w;
     }
 }
-
-void
-DrawTopDownView(const player_t &player)
-{
-    for (int row = 0; row < board_h; ++row) {
-        for (int col = 0; col < board_w; ++col) {
-            if (board[col][row] != 0) {
-                DrawRectangle(col * cell_size, row * cell_size,
-                    cell_size, cell_size, BLACK);
-            }
-            else
-            {
-                DrawRectangle(col * cell_size, row * cell_size,
-                    cell_size, cell_size, WHITE);
-            }
-        }
-    }
-
-    for (int x = cell_size; x < screenWidth; x += cell_size) {
-        DrawLine(x, 0, x, screenHeight, GRAY);
-    }
-    for (int y = cell_size; y < screenHeight; y += cell_size) {
-        DrawLine(0, y, screenWidth, y, GRAY);
-    }
-
-    DrawCircleV(player.pos, 14, RED);
-    DrawLineEx(player.pos, player.pos + Vector2Rotate({ 1,0 }, player.rotation) * 25, 5, BLUE);
-}
+#endif
 
 int main()
 {
+#ifdef RUN_RAYCASTER
     InitWindow(screenWidth * 2, screenHeight, "GDSC: Creative Coding");
+#else
+    InitWindow(screenWidth, screenHeight, "GDSC: Creative Coding");
+#endif
     SetTargetFPS(60);
 
     player_t player;
@@ -255,52 +254,50 @@ int main()
     player.speed = 100;
     player.rotation = 0;
 
+#ifdef RUN_RAYCASTER
     RaycastConfig config;
     config.fov = 60 * DEG2RAD;
     config.rays_count = 240;
     config.delta_angle = config.fov / config.rays_count;
     config.rect_w = (screenWidth / config.fov) * config.delta_angle;
+#endif
 
-    bool mouse_2d = false;
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
 
         Vector2 move = { 0, 0 };
-        if (mouse_2d)
-        {
-            if (IsKeyDown(KEY_W))
-                move.y -= player.speed * dt;
-            if (IsKeyDown(KEY_S))
-                move.y += player.speed * dt;
-            if (IsKeyDown(KEY_A))
-                move.x -= player.speed * dt;
-            if (IsKeyDown(KEY_D))
-                move.x += player.speed * dt;
+#ifdef RUN_RAYCASTER
+        DisableCursor();
+        float delta = GetMouseDelta().x;
+        player.rotation += delta * dt * 0.1;
+        Vector2 dir = Vector2Rotate({ 1, 0 }, player.rotation);
+        Vector2 forward = dir * (player.speed * dt);
+        Vector2 right = Vector2Rotate(forward, PI / 2);
+        if (IsKeyDown(KEY_W))
+            move = forward;
+        if (IsKeyDown(KEY_S))
+            move = -forward;
+        if (IsKeyDown(KEY_A))
+            move = -right;
+        if (IsKeyDown(KEY_D))
+            move = right;
+#else
+        if (IsKeyDown(KEY_W))
+            move.y -= player.speed * dt;
+        if (IsKeyDown(KEY_S))
+            move.y += player.speed * dt;
+        if (IsKeyDown(KEY_A))
+            move.x -= player.speed * dt;
+        if (IsKeyDown(KEY_D))
+            move.x += player.speed * dt;
 
-            Vector2 mp = {
-                GetMouseX() - player.pos.x,
-                GetMouseY() - player.pos.y
-            };
-            player.rotation = Vector2Angle({ 1, 0 }, mp);
-        }
-        else
-        {
-            DisableCursor();
-            float delta = GetMouseDelta().x;
-            player.rotation += delta * dt * 0.1;
-            Vector2 dir = Vector2Rotate({ 1, 0 }, player.rotation);
-            Vector2 forward = dir * (player.speed * dt);
-            Vector2 right = Vector2Rotate(forward, PI / 2);
-            if (IsKeyDown(KEY_W))
-                move = forward;
-            if (IsKeyDown(KEY_S))
-                move = -forward;
-            if (IsKeyDown(KEY_A))
-                move = -right;
-            if (IsKeyDown(KEY_D))
-                move = right;
-        }
+        Vector2 mp = {
+            GetMouseX() - player.pos.x,
+            GetMouseY() - player.pos.y
+        };
+        player.rotation = Vector2Angle({ 1, 0 }, mp);
+#endif
         player.pos += move;
         if (check_collision(player.pos, 15))
             player.pos -= move;
@@ -311,7 +308,9 @@ int main()
             ClearBackground(SKYBLUE);
             DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, BEIGE);
             DrawTopDownView(player);
+#ifdef RUN_RAYCASTER
             DrawRaycastView(player, config);
+#endif
         }
         EndDrawing();
     }
