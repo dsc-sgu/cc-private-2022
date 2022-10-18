@@ -1,12 +1,8 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <chrono>
-#include <cstdint>
-#include <thread>
 
 #include <raylib-ext.hpp>
-
 #include "okna.hpp"
 
 #define ENEMY_W 100
@@ -86,7 +82,7 @@ reflect(Window &ball, Window &obj, Vector2 &ball_speed)
 int
 main()
 {
-    init_graphics();
+    oknaInit();
 
     Vector2 monitor_dim = get_monitor_size();
 
@@ -143,17 +139,7 @@ main()
 
     auto clock = Clock(60);
     clock.start();
-    while (!glfwWindowShouldClose(bar.handle)) {
-        // TODO(aguschin): Поместить код обновления позиции в функцию и
-        // вызывать её для всех окон (можно будет передвигать врагов)
-        int bar_x, bar_y;
-        glfwGetWindowPos(bar.handle, &bar_x, &bar_y);
-        bar.setPosition(Vector2 {
-            float(bar_x),
-            float(bar_y - DECORATION_HEIGHT)
-        });
-        bar.updateSize();
-
+    while (bar.active) {
         ball.move(ball_speed * clock.dt);
         if (ball.pos.x < 0 || ball.pos.x + ball.width >= monitor_dim.x)
             ball_speed.x *= -1;
@@ -172,12 +158,23 @@ main()
         }
         reflect(ball, bar, ball_speed);
 
-        clock.tick();
+        for (int i = 0; i < enemies_rows; ++i) {
+            for (int j = 0; j < enemies_width_count; ++j) {
+                Window *enemy = &enemies[i][j];
+                if (enemy->active) {
+                    enemy->sync();
+                }
+            }
+        }
+        bar.sync();
+        // TODO(aguschin): Починить syncPosition для случая, когда
+        // обновляется двигающееся само по себе окно.
+        // ball.sync();
 
-        update_graphics();
+        clock.tick();
     }
 
-    terminate_graphics();
+    oknaTerminate();
 
     return (EXIT_SUCCESS);
 }

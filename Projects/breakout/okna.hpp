@@ -1,3 +1,7 @@
+#include <chrono>
+#include <cstdint>
+#include <thread>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <raylib-ext.hpp>
@@ -10,6 +14,7 @@ struct Window {
     int height;
     Vector2 pos;
     bool decorated;
+    bool resizable;
     bool active;
 
     Color fill_color;
@@ -19,6 +24,7 @@ struct Window {
     Window(int window_w, int window_h, Vector2 pos, bool decorated = true,
         bool resizable = false) : width(window_w), height(window_h), pos(pos),
             decorated(decorated),
+            resizable(resizable),
             active(true),
             fill_color({0, 0, 0, 255})
     {
@@ -55,7 +61,11 @@ struct Window {
     void setPosition(Vector2 pos) {
         this->pos = pos;
         glfwMakeContextCurrent(this->handle);
-        glfwSetWindowPos(this->handle, pos.x, pos.y + (decorated ? DECORATION_HEIGHT : 0));
+        glfwSetWindowPos(
+            this->handle,
+            pos.x,
+            pos.y + (decorated ? DECORATION_HEIGHT : 0)
+        );
     }
 
     void move(Vector2 move) {
@@ -79,14 +89,32 @@ struct Window {
         fill(c.r, c.g, c.b, c.a);
     }
 
-    void updateSize() {
+    void close() {
+        glfwDestroyWindow(this->handle);
+        this->active = false;
+    }
+
+    void syncSize() {
         glfwGetWindowSize(this->handle, &this->width, &this->height);
         fill(this->fill_color);
     }
 
-    void close() {
-        glfwDestroyWindow(this->handle);
-        this->active = false;
+    void syncPosition()
+    {
+        int win_x, win_y;
+        glfwGetWindowPos(this->handle, &win_x, &win_y);
+        this->setPosition(Vector2 {
+            float(win_x),
+            float(win_y - DECORATION_HEIGHT)
+        });
+    }
+
+    void sync() {
+        glfwPollEvents();
+        if (this->resizable) syncSize();
+        syncPosition();
+        if (glfwWindowShouldClose(this->handle))
+            this->close();
     }
 };
 
@@ -129,7 +157,7 @@ private:
 };
 
 void
-init_graphics()
+oknaInit()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -139,15 +167,9 @@ init_graphics()
 }
 
 void
-terminate_graphics()
+oknaTerminate()
 {
     glfwTerminate();
-}
-
-void
-update_graphics()
-{
-    glfwPollEvents();
 }
 
 Vector2
