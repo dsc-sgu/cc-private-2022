@@ -19,7 +19,7 @@ release() {
 winbuild() {
     set -o xtrace
     cmake -DBUILD_SHARED_LIBS=False \
-          -G "Visual Studio 16 2019" -S . -B ./Build
+          -S . -B ./Build
 }
 
 clean() {
