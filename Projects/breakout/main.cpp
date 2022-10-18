@@ -25,10 +25,6 @@ Vector2 ball_speed = {450, 450};
 int monitor_w;
 int monitor_h;
 
-struct Color4f {
-    float r, g, b, a;
-};
-
 struct Window {
     GLFWwindow *handle;
     int width;
@@ -37,7 +33,7 @@ struct Window {
     bool decorated;
     bool active;
 
-    Color4f fill_color;
+    Color fill_color;
 
     Window() = default;
 
@@ -45,7 +41,7 @@ struct Window {
         bool resizable = false) : width(window_w), height(window_h), pos(pos),
             decorated(decorated),
             active(true),
-            fill_color({0, 0, 0, 1})
+            fill_color({0, 0, 0, 255})
     {
         if (decorated) {
             this->pos.y -= DECORATION_HEIGHT;
@@ -87,15 +83,20 @@ struct Window {
         setPosition(this->pos + move);
     }
 
-    void fill(float r, float g, float b, float a) {
+    void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
         this->fill_color = {r, g, b, a};
         glfwMakeContextCurrent(this->handle);
-        glClearColor(r, g, b, a);
+        glClearColor(
+            r / 255.0f,
+            g / 255.0f,
+            b / 255.0f,
+            a / 255.0f
+        );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwSwapBuffers(this->handle);
     }
 
-    void fill(Color4f c) {
+    void fill(Color c) {
         fill(c.r, c.g, c.b, c.a);
     }
 
@@ -120,13 +121,13 @@ enum Collision {
 
 Collision collide(const Window& a, const Window& b) {
     // NOTE (mchernigin): Collides a WITH b (not symmetric)!
-    if (!(a.pos.x + a.width < b.pos.x || a.pos.x > b.pos.x + b.width || 
+    if (!(a.pos.x + a.width < b.pos.x || a.pos.x > b.pos.x + b.width ||
           a.pos.y + a.height < b.pos.y || a.pos.y > b.pos.y + b.height)) {
-        
+
         float dx1 = abs(a.pos.x + a.width - b.pos.x);
         float dx2 = abs(b.pos.x + b.width - a.pos.x);
         float dx = std::min({dx1, dx2, dx1 + dx2 - std::max(a.width, b.width)});
-    
+
         float dy1 = abs(a.pos.y + a.height - b.pos.y);
         float dy2 = abs(b.pos.y + b.height - a.pos.y);
         float dy = std::min({dy1, dy2, dy1 + dy2 - std::max(a.height, b.height)});
@@ -232,13 +233,13 @@ main ()
         enemies_rows, std::vector<Window>(enemies_width_count)
     );
 
-    Color4f colors[6] = {
-        { 1, 0,   0, 1 },
-        { 1, 0.5, 0, 1 },
-        { 1, 1,   0, 1 },
-        { 0, 1,   0, 1 },
-        { 0, 0,   1, 1 },
-        { 0, 0.5, 1, 1 },
+    Color colors[6] = {
+        { 255,   0,   0, 255 },
+        { 255, 128,   0, 255 },
+        { 255, 255,   0, 255 },
+        {   0, 255,   0, 255 },
+        {   0,   0, 255, 255 },
+        {   0, 128, 255, 255 },
     };
     for (int row = 0; row < enemies_rows; ++row)
     {
@@ -270,8 +271,8 @@ main ()
         }
     }
 
-    ball.fill(1, 0, 0, 1);
-    bar.fill(0, 0.5, 0.5, 1);
+    ball.fill(255, 0, 0, 255);
+    bar.fill(0, 128, 128, 255);
 
     float dt = 0.016;
     auto clock = Clock(60);
