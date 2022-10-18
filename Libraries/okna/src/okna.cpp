@@ -13,15 +13,17 @@
 
 Window::Window() = default;
 
-Window::Window(int window_w, int window_h, Vector2 pos, bool decorated,
-    bool resizable) :
-        width(window_w), height(window_h), pos(pos),
+Window::Window(int window_w, int window_h, Vector2 pos,
+               bool decorated, bool resizable) :
+        width(window_w), height(window_h),
+        pos(pos),
         decorated(decorated),
         resizable(resizable),
         active(true),
         fill_color({0, 0, 0, 255})
 {
-    if (decorated) {
+    if (decorated)
+    {
         this->pos.y += DECORATION_HEIGHT;
         window_h -= DECORATION_HEIGHT;
     }
@@ -33,14 +35,16 @@ Window::Window(int window_w, int window_h, Vector2 pos, bool decorated,
 
     this->handle = glfwCreateWindow(window_w, window_h, "", NULL, NULL);
 
-    if (this->handle == NULL) {
+    if (this->handle == NULL)
+    {
         std::cout << "ERROR: can't create GLFW window\n" << std::endl;
         glfwTerminate();
     }
 
     glfwMakeContextCurrent(this->handle);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
         std::cout << "ERROR: can't start GLAD\n" << std::endl;
         glfwTerminate();
     }
@@ -48,10 +52,12 @@ Window::Window(int window_w, int window_h, Vector2 pos, bool decorated,
     glViewport(0, 0, window_w, window_h);
     fill(this->fill_color);
 
-    setPosition(this->pos);
+    set_position(this->pos);
 }
 
-void Window::setPosition(Vector2 pos) {
+void
+Window::set_position(Vector2 pos)
+{
     this->pos = pos;
     glfwMakeContextCurrent(this->handle);
     glfwSetWindowPos(
@@ -61,11 +67,15 @@ void Window::setPosition(Vector2 pos) {
     );
 }
 
-void Window::move(Vector2 move) {
-    setPosition(this->pos + move);
+void
+Window::move(Vector2 move)
+{
+    set_position(this->pos + move);
 }
 
-void Window::fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+void
+Window::fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
     this->fill_color = {r, g, b, a};
     glfwMakeContextCurrent(this->handle);
     glClearColor(
@@ -78,35 +88,44 @@ void Window::fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     glfwSwapBuffers(this->handle);
 }
 
-void Window::fill(Color c) {
+void
+Window::fill(Color c)
+{
     fill(c.r, c.g, c.b, c.a);
 }
 
-void Window::close() {
+void
+Window::close()
+{
     glfwDestroyWindow(this->handle);
     this->active = false;
 }
 
-void Window::syncSize() {
+void
+Window::sync_size()
+{
     glfwGetWindowSize(this->handle, &this->width, &this->height);
     if (decorated) this->height += DECORATION_HEIGHT;
     fill(this->fill_color);
 }
 
-void Window::syncPosition()
+void
+Window::sync_position()
 {
     int win_x, win_y;
     glfwGetWindowPos(this->handle, &win_x, &win_y);
-    this->setPosition(Vector2 {
+    this->set_position(Vector2 {
         float(win_x),
         float(win_y - (decorated? DECORATION_HEIGHT : 0))
     });
 }
 
-void Window::sync() {
+void
+Window::sync()
+{
     glfwPollEvents();
-    if (this->resizable) syncSize();
-    syncPosition();
+    if (this->resizable) sync_size();
+    sync_position();
     if (glfwWindowShouldClose(this->handle))
         this->close();
 }
@@ -144,7 +163,7 @@ uint64_t Clock::get_ns()
 }
 
 void
-oknaInit()
+okna_init()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -154,13 +173,13 @@ oknaInit()
 }
 
 void
-oknaTerminate()
+okna_terminate()
 {
     glfwTerminate();
 }
 
 Vector2
-oknaGetMonitorSize()
+okna_get_monitor_size()
 {
     int count;
     GLFWmonitor **monitor = glfwGetMonitors(&count);
