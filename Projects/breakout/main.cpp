@@ -167,9 +167,7 @@ main()
             }
         }
         bar.sync();
-        // TODO(aguschin): Починить syncPosition для случая, когда
-        // обновляется окно без декораций.
-        // ball.sync();
+        ball.sync();
 
         clock.tick();
     }

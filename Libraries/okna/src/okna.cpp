@@ -99,7 +99,7 @@ void Window::syncPosition()
     glfwGetWindowPos(this->handle, &win_x, &win_y);
     this->setPosition(Vector2 {
         float(win_x),
-        float(win_y - DECORATION_HEIGHT)
+        float(win_y - (decorated? DECORATION_HEIGHT : 0))
     });
 }
 
