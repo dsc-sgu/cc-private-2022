@@ -1,9 +1,6 @@
 #include <string>
 #include <raylib.h>
 
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
-
 extern "C" {
 #define RAYMATH_IMPLEMENTATION
 #include <raymath.h>
