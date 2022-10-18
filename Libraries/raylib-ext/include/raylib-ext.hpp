@@ -4,19 +4,17 @@
 #include <string>
 #include <iostream>
 #include <raylib.h>
+
+#undef RAYGUI_IMPLEMENTATION
 #include <raygui.h>
+
+#undef RLGL_IMPLEMENTATION
 #include <rlgl.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
+#undef RAYMATH_IMPLEMENTATION
 #include <raymath.h>
-
-#ifdef __cplusplus
 }
-#endif
-
 
 /* Vector2 */
 

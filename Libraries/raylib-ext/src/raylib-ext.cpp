@@ -1,11 +1,15 @@
-#include <raylib-ext.hpp>
+#include <string>
+#include <raylib.h>
 
 #define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
 
-#include <string>
-#include <raylib.h>
-#include <rlgl.h>
+extern "C" {
+#define RAYMATH_IMPLEMENTATION
+#include <raymath.h>
+}
+
+#include <raylib-ext.hpp>
 
 /* Vector2 */
 
@@ -678,7 +682,8 @@ LoadMusicStream(const std::string &fileName)
 }
 
 Music
-LoadMusicStreamFromMemory(const std::string &fileType, unsigned char *data,
+LoadMusicStreamFromMemory(const std::string &fileType,
+                          const unsigned char *data,
                           int dataSize)
 {
     return LoadMusicStreamFromMemory(fileType.c_str(), data, dataSize);
