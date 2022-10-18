@@ -343,10 +343,10 @@ operator+(const Color &c1, const Color &c2)
 noexcept
 {
     return {
-        (uint8_t) Clamp(c1.r + c2.r, 0, 255),
-        (uint8_t) Clamp(c1.g + c2.g, 0, 255),
-        (uint8_t) Clamp(c1.b + c2.b, 0, 255),
-        (uint8_t) Clamp(c1.a + c2.a, 0, 255),
+        (uint8_t) Clamp((float) c1.r + (float) c2.r, 0, 255),
+        (uint8_t) Clamp((float) c1.g + (float) c2.g, 0, 255),
+        (uint8_t) Clamp((float) c1.b + (float) c2.b, 0, 255),
+        (uint8_t) Clamp((float) c1.a + (float) c2.a, 0, 255),
     };
 }
 
@@ -355,10 +355,10 @@ operator-(const Color &c1, const Color &c2)
 noexcept
 {
     return {
-        (uint8_t) Clamp(c1.r - c2.r, 0, 255),
-        (uint8_t) Clamp(c1.g - c2.g, 0, 255),
-        (uint8_t) Clamp(c1.b - c2.b, 0, 255),
-        (uint8_t) Clamp(c1.a - c2.a, 0, 255),
+        (uint8_t) Clamp((float) c1.r - (float) c2.r, 0, 255),
+        (uint8_t) Clamp((float) c1.g - (float) c2.g, 0, 255),
+        (uint8_t) Clamp((float) c1.b - (float) c2.b, 0, 255),
+        (uint8_t) Clamp((float) c1.a - (float) c2.a, 0, 255),
     };
 }
 
@@ -367,9 +367,9 @@ operator*(const Color &c, const float f)
 noexcept
 {
     return {
-        (uint8_t) Clamp(c.r * f, 0, 255),
-        (uint8_t) Clamp(c.g * f, 0, 255),
-        (uint8_t) Clamp(c.b * f, 0, 255),
+        (uint8_t) Clamp((float) c.r * f, 0, 255),
+        (uint8_t) Clamp((float) c.g * f, 0, 255),
+        (uint8_t) Clamp((float) c.b * f, 0, 255),
         c.a, // c.a doesn't change
     };
 }
@@ -378,9 +378,9 @@ Color
 operator/(const Color &c, const float f)
 {
     return {
-        (uint8_t) Clamp(c.r / f, 0, 255),
-        (uint8_t) Clamp(c.g / f, 0, 255),
-        (uint8_t) Clamp(c.b / f, 0, 255),
+        (uint8_t) Clamp((float) c.r / f, 0, 255),
+        (uint8_t) Clamp((float) c.g / f, 0, 255),
+        (uint8_t) Clamp((float) c.b / f, 0, 255),
         c.a, // c.a doesn't change
     };
 }
@@ -389,10 +389,10 @@ Color&
 operator+=(Color &c1, const Color &c2)
 noexcept
 {
-    c1.r = Clamp(c1.r + c2.r, 0, 255);
-    c1.g = Clamp(c1.g + c2.g, 0, 255);
-    c1.b = Clamp(c1.b + c2.b, 0, 255);
-    c1.a = Clamp(c1.a + c2.a, 0, 255);
+    c1.r = (uint8_t) Clamp((float) c1.r + (float) c2.r, 0, 255);
+    c1.g = (uint8_t) Clamp((float) c1.g + (float) c2.g, 0, 255);
+    c1.b = (uint8_t) Clamp((float) c1.b + (float) c2.b, 0, 255);
+    c1.a = (uint8_t) Clamp((float) c1.a + (float) c2.a, 0, 255);
     return c1;
 }
 
@@ -400,10 +400,10 @@ Color&
 operator-=(Color &c1, const Color &c2)
 noexcept
 {
-    c1.r = Clamp(c1.r - c2.r, 0, 255);
-    c1.g = Clamp(c1.g - c2.g, 0, 255);
-    c1.b = Clamp(c1.b - c2.b, 0, 255);
-    c1.a = Clamp(c1.a - c2.a, 0, 255);
+    c1.r = (uint8_t) Clamp((float) c1.r - (float) c2.r, 0, 255);
+    c1.g = (uint8_t) Clamp((float) c1.g - (float) c2.g, 0, 255);
+    c1.b = (uint8_t) Clamp((float) c1.b - (float) c2.b, 0, 255);
+    c1.a = (uint8_t) Clamp((float) c1.a - (float) c2.a, 0, 255);
     return c1;
 }
 
@@ -411,9 +411,9 @@ Color&
 operator*=(Color &c, const float f)
 noexcept
 {
-    c.r = Clamp(c.r * f, 0, 255);
-    c.g = Clamp(c.g * f, 0, 255);
-    c.b = Clamp(c.b * f, 0, 255);
+    c.r = (uint8_t) Clamp((float) c.r * f, 0, 255);
+    c.g = (uint8_t) Clamp((float) c.g * f, 0, 255);
+    c.b = (uint8_t) Clamp((float) c.b * f, 0, 255);
     // c.a doesn't change
     return c;
 }
@@ -421,9 +421,9 @@ noexcept
 Color&
 operator/=(Color &c, const float f)
 {
-    c.r = Clamp(c.r / f, 0, 255);
-    c.g = Clamp(c.g / f, 0, 255);
-    c.b = Clamp(c.b / f, 0, 255);
+    c.r = (uint8_t) Clamp((float) c.r / f, 0, 255);
+    c.g = (uint8_t) Clamp((float) c.g / f, 0, 255);
+    c.b = (uint8_t) Clamp((float) c.b / f, 0, 255);
     // c.a doesn't change
     return c;
 }
