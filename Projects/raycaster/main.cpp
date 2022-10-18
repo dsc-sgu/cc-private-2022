@@ -4,6 +4,7 @@
 #include <iostream>
 
 #define RUN_RAYCASTER
+#define RAYCAST_TEXTURES
 
 const int screenWidth = 640;
 const int screenHeight = 640;
@@ -22,6 +23,11 @@ int board[board_w][board_h] = {
     { 1, 0, 0, 0, 1, 0, 0, 1 },
     { 1, 0, 1, 0, 0, 0, 0, 1 },
     { 1, 1, 1, 1, 1, 1, 1, 1 },
+};
+Color wall_colors[] = {
+    BLANK,
+    RED,
+    BLUE,
 };
 
 struct player_t {
@@ -210,13 +216,12 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
         float rect_y = (screenHeight - rect_h) / 2;
 
         int image_idx = board[hit.cell_pos.x][hit.cell_pos.y];
-        Image cell_image = images[image_idx];
-
+#ifdef RAYCAST_TEXTURES
         Vector2 pos_in_cell = {
             hit.pos.x - hit.cell_pos.x * cell_size,
             hit.pos.y - hit.cell_pos.y * cell_size,
         };
-
+        Image cell_image = images[image_idx];
         Vector2 column = pos_in_cell / cell_size * cell_image.width;
         int col = column.y;
         if (hit.is_horizontal)
@@ -234,6 +239,16 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
                 config.rect_w + 1, pix_h + 1, pixel
             );
         }
+#else
+        Color wall_color = wall_colors[image_idx];
+        if (hit.is_horizontal)
+            wall_color *= 0.8f;
+
+        DrawRectangle(
+            screenWidth + rect_x, rect_y,
+            config.rect_w + 1, rect_h + 1, wall_color
+        );
+#endif
 
         rect_x += config.rect_w;
     }
