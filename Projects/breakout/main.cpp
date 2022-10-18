@@ -3,17 +3,17 @@
 #include <vector>
 
 #include <raylib-ext.hpp>
-#include "okna.hpp"
+#include <okna.hpp>
 
 #define ENEMY_W 100
-#define ENEMY_H 30
+#define ENEMY_H 60
 #define GAP 10
 #define MIN_PADDING 30
 
 #define BALL_W 60
 #define BALL_H 60
 #define BAR_W 200
-#define BAR_H 30
+#define BAR_H 60
 
 Vector2 ball_speed = {450, 450};
 
@@ -84,7 +84,7 @@ main()
 {
     oknaInit();
 
-    Vector2 monitor_dim = get_monitor_size();
+    Vector2 monitor_dim = oknaGetMonitorSize();
 
     int enemies_width_count =
         (monitor_dim.x + GAP - MIN_PADDING * 2)
@@ -111,7 +111,7 @@ main()
             enemies[row][col] = Window(
                 ENEMY_W, ENEMY_H, {
                     float(padding + (ENEMY_W + GAP) * col),
-                    float(40 + (ENEMY_H + DECORATION_HEIGHT + GAP) * row)
+                    float(40 + (ENEMY_H + GAP) * row)
                 }
             );
         }
@@ -168,7 +168,7 @@ main()
         }
         bar.sync();
         // TODO(aguschin): Починить syncPosition для случая, когда
-        // обновляется двигающееся само по себе окно.
+        // обновляется окно без декораций.
         // ball.sync();
 
         clock.tick();
