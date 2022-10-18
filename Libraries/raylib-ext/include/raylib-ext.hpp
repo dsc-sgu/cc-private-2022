@@ -2,20 +2,19 @@
 #define RAYLIB_EXT_HPP
 
 #include <string>
+#include <iostream>
 #include <raylib.h>
+
+#undef RAYGUI_IMPLEMENTATION
 #include <raygui.h>
+
+#undef RLGL_IMPLEMENTATION
 #include <rlgl.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
+#undef RAYMATH_IMPLEMENTATION
 #include <raymath.h>
-
-#ifdef __cplusplus
 }
-#endif
-
 
 /* Vector2 */
 
@@ -29,6 +28,7 @@ Vector2& operator+=(Vector2 &v1, const Vector2 &v2) noexcept;
 Vector2& operator-=(Vector2 &v1, const Vector2 &v2) noexcept;
 Vector2& operator*=(Vector2 &v, const float &f) noexcept;
 Vector2& operator/=(Vector2 &v, const float &f);
+std::ostream& operator<<(std::ostream &stream, Vector2 &v) noexcept;
 
 /* Vector3 */
 
@@ -42,6 +42,7 @@ Vector3& operator+=(Vector3 &v1, const Vector3 &v2) noexcept;
 Vector3& operator-=(Vector3 &v1, const Vector3 &v2) noexcept;
 Vector3& operator*=(Vector3 &v, const float &f) noexcept;
 Vector3& operator/=(Vector3 &v, const float &f);
+std::ostream& operator<<(std::ostream &stream, Vector3 &v) noexcept;
 
 /* Vector4/Quaternion */
 
@@ -55,6 +56,7 @@ Vector4& operator+=(Vector4 &v1, const Vector4 &v2) noexcept;
 Vector4& operator-=(Vector4 &v1, const Vector4 &v2) noexcept;
 Vector4& operator*=(Vector4 &v, const float &f) noexcept;
 Vector4& operator/=(Vector4 &v, const float &f);
+std::ostream& operator<<(std::ostream &stream, Vector4 &v) noexcept;
 
 /* Matrix */
 
@@ -65,12 +67,25 @@ Matrix& operator+=(Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator-=(Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator*=(Matrix &m1, const Matrix &m2) noexcept;
 
+/* Color */
+
+bool operator==(const Color &c1, const Color &c2) noexcept;
+Color operator+(const Color &c1, const Color &c2) noexcept;
+Color operator-(const Color &c1, const Color &c2) noexcept;
+Color operator*(const Color &c, const float f) noexcept;
+Color operator/(const Color &c, const float f);
+Color& operator+=(Color &c1, const Color &c2) noexcept;
+Color& operator-=(Color &c1, const Color &c2) noexcept;
+Color& operator*=(Color &c, const float f) noexcept;
+Color& operator/=(Color &c, const float f);
+std::ostream& operator<<(std::ostream &stream, Color &c) noexcept;
+
 /* Core */
 
-void 
+void
 InitWindow(int width, int height, const std::string &title);
 
-void 
+void
 SetWindowTitle(const std::string &title);
 
 void
@@ -88,7 +103,7 @@ GetShaderLocation(Shader shader, const std::string &uniformName);
 int
 GetShaderLocationAttrib(Shader shader, const std::string &attribName);
 
-void 
+void
 TakeScreenshot(const std::string &fileName);
 
 unsigned char *
@@ -142,7 +157,7 @@ Image
 LoadImage(const std::string &fileName);
 
 Image
-LoadImageRaw(const std::string &fileName, int width, int height, int format, 
+LoadImageRaw(const std::string &fileName, int width, int height, int format,
              int headerSize);
 
 Image

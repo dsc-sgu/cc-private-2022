@@ -1,11 +1,12 @@
-#include <raylib-ext.hpp>
-
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
-
 #include <string>
 #include <raylib.h>
-#include <rlgl.h>
+
+extern "C" {
+#define RAYMATH_IMPLEMENTATION
+#include <raymath.h>
+}
+
+#include <raylib-ext.hpp>
 
 /* Vector2 */
 
@@ -16,14 +17,14 @@ noexcept
     return v1.x == v2.x && v1.y == v2.y;
 }
 
-Vector2 
+Vector2
 operator+(const Vector2 &v1, const Vector2 &v2)
 noexcept
 {
     return Vector2Add(v1, v2);
 }
 
-Vector2 
+Vector2
 operator-(const Vector2 &v1, const Vector2 &v2)
 noexcept
 {
@@ -37,14 +38,14 @@ noexcept
     return Vector2Negate(v);
 }
 
-Vector2 
+Vector2
 operator*(const Vector2 &v, const float &f)
 noexcept
 {
     return Vector2Scale(v, f);
 }
 
-Vector2 
+Vector2
 operator/(const Vector2 &v, const float &f)
 {
     return Vector2Scale(v, 1 / f);
@@ -85,6 +86,14 @@ operator/=(Vector2 &v, const float &f)
     return v;
 }
 
+std::ostream&
+operator<<(std::ostream &stream, Vector2 &v)
+noexcept
+{
+    stream << "{ " << v.x << ", " << v.y << " }";
+    return stream;
+}
+
 /* Vector3 */
 
 bool
@@ -94,14 +103,14 @@ noexcept
     return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
-Vector3 
+Vector3
 operator+(const Vector3 &v1, const Vector3 &v2)
 noexcept
 {
     return Vector3Add(v1, v2);
 }
 
-Vector3 
+Vector3
 operator-(const Vector3 &v1, const Vector3 &v2)
 noexcept
 {
@@ -115,14 +124,14 @@ noexcept
     return Vector3Negate(v);
 }
 
-Vector3 
+Vector3
 operator*(const Vector3 &v, const float &f)
 noexcept
 {
     return Vector3Scale(v, f);
 }
 
-Vector3 
+Vector3
 operator/(const Vector3 &v, const float &f)
 {
     return Vector3Scale(v, 1 / f);
@@ -167,6 +176,14 @@ operator/=(Vector3 &v, const float &f)
     return v;
 }
 
+std::ostream&
+operator<<(std::ostream &stream, Vector3 &v)
+noexcept
+{
+    stream << "{ " << v.x << ", " << v.y << ", " << v.z << " }";
+    return stream;
+}
+
 /* Vector4/Quaternion */
 
 bool
@@ -176,14 +193,14 @@ noexcept
     return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
-Vector4 
+Vector4
 operator+(const Vector4 &v1, const Vector4 &v2)
 noexcept
 {
     return QuaternionAdd(v1, v2);
 }
 
-Vector4 
+Vector4
 operator-(const Vector4 &v1, const Vector4 &v2)
 noexcept
 {
@@ -197,14 +214,14 @@ noexcept
     return QuaternionScale(v, -1);
 }
 
-Vector4 
+Vector4
 operator*(const Vector4 &v, const float &f)
 noexcept
 {
     return QuaternionScale(v, f);
 }
 
-Vector4 
+Vector4
 operator/(const Vector4 &v, const float &f)
 {
     return QuaternionScale(v, 1 / f);
@@ -253,23 +270,31 @@ operator/=(Vector4 &v, const float &f)
     return v;
 }
 
+std::ostream&
+operator<<(std::ostream &stream, Vector4 &v)
+noexcept
+{
+    stream << "{ " << v.x << ", " << v.y << ", " << v.z << ", " << v.w << " }";
+    return stream;
+}
+
 /* Matrix */
 
-Matrix 
+Matrix
 operator+(const Matrix &m1, const Matrix &m2)
 noexcept
 {
     return MatrixAdd(m1, m2);
 }
 
-Matrix 
+Matrix
 operator-(const Matrix &m1, const Matrix &m2)
 noexcept
 {
     return MatrixSubtract(m1, m2);
 }
 
-Matrix 
+Matrix
 operator*(const Matrix &m1, const Matrix &m2)
 noexcept
 {
@@ -300,15 +325,127 @@ noexcept
     return m1;
 }
 
+/* Color */
+
+bool
+operator==(const Color &c1, const Color &c2)
+noexcept
+{
+    return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b && c1.a == c2.a;
+
+}
+
+Color
+operator+(const Color &c1, const Color &c2)
+noexcept
+{
+    return {
+        (uint8_t) Clamp((float) c1.r + (float) c2.r, 0, 255),
+        (uint8_t) Clamp((float) c1.g + (float) c2.g, 0, 255),
+        (uint8_t) Clamp((float) c1.b + (float) c2.b, 0, 255),
+        (uint8_t) Clamp((float) c1.a + (float) c2.a, 0, 255),
+    };
+}
+
+Color
+operator-(const Color &c1, const Color &c2)
+noexcept
+{
+    return {
+        (uint8_t) Clamp((float) c1.r - (float) c2.r, 0, 255),
+        (uint8_t) Clamp((float) c1.g - (float) c2.g, 0, 255),
+        (uint8_t) Clamp((float) c1.b - (float) c2.b, 0, 255),
+        (uint8_t) Clamp((float) c1.a - (float) c2.a, 0, 255),
+    };
+}
+
+Color
+operator*(const Color &c, const float f)
+noexcept
+{
+    return {
+        (uint8_t) Clamp((float) c.r * f, 0, 255),
+        (uint8_t) Clamp((float) c.g * f, 0, 255),
+        (uint8_t) Clamp((float) c.b * f, 0, 255),
+        c.a, // c.a doesn't change
+    };
+}
+
+Color
+operator/(const Color &c, const float f)
+{
+    return {
+        (uint8_t) Clamp((float) c.r / f, 0, 255),
+        (uint8_t) Clamp((float) c.g / f, 0, 255),
+        (uint8_t) Clamp((float) c.b / f, 0, 255),
+        c.a, // c.a doesn't change
+    };
+}
+
+Color&
+operator+=(Color &c1, const Color &c2)
+noexcept
+{
+    c1.r = (uint8_t) Clamp((float) c1.r + (float) c2.r, 0, 255);
+    c1.g = (uint8_t) Clamp((float) c1.g + (float) c2.g, 0, 255);
+    c1.b = (uint8_t) Clamp((float) c1.b + (float) c2.b, 0, 255);
+    c1.a = (uint8_t) Clamp((float) c1.a + (float) c2.a, 0, 255);
+    return c1;
+}
+
+Color&
+operator-=(Color &c1, const Color &c2)
+noexcept
+{
+    c1.r = (uint8_t) Clamp((float) c1.r - (float) c2.r, 0, 255);
+    c1.g = (uint8_t) Clamp((float) c1.g - (float) c2.g, 0, 255);
+    c1.b = (uint8_t) Clamp((float) c1.b - (float) c2.b, 0, 255);
+    c1.a = (uint8_t) Clamp((float) c1.a - (float) c2.a, 0, 255);
+    return c1;
+}
+
+Color&
+operator*=(Color &c, const float f)
+noexcept
+{
+    c.r = (uint8_t) Clamp((float) c.r * f, 0, 255);
+    c.g = (uint8_t) Clamp((float) c.g * f, 0, 255);
+    c.b = (uint8_t) Clamp((float) c.b * f, 0, 255);
+    // c.a doesn't change
+    return c;
+}
+
+Color&
+operator/=(Color &c, const float f)
+{
+    c.r = (uint8_t) Clamp((float) c.r / f, 0, 255);
+    c.g = (uint8_t) Clamp((float) c.g / f, 0, 255);
+    c.b = (uint8_t) Clamp((float) c.b / f, 0, 255);
+    // c.a doesn't change
+    return c;
+}
+
+std::ostream&
+operator<<(std::ostream &stream, Color &c)
+noexcept
+{
+    stream << "Color { "
+           << c.r << ", "
+           << c.g << ", "
+           << c.b << ", "
+           << c.a << " }";
+    return stream;
+}
+
 /* Core */
 
-void 
+void
 InitWindow(int width, int height, const std::string &title)
 {
     InitWindow(width, height, title.c_str());
 }
 
-void 
+void
 SetWindowTitle(const std::string &title)
 {
     SetWindowTitle(title.c_str());
@@ -344,7 +481,7 @@ GetShaderLocationAttrib(Shader shader, const std::string &attribName)
     return GetShaderLocationAttrib(shader, attribName.c_str());
 }
 
-void 
+void
 TakeScreenshot(const std::string &fileName)
 {
     TakeScreenshot(fileName.c_str());
@@ -449,7 +586,7 @@ LoadImage(const std::string &fileName)
 }
 
 Image
-LoadImageRaw(const std::string &fileName, int width, int height, int format, 
+LoadImageRaw(const std::string &fileName, int width, int height, int format,
              int headerSize)
 {
     return LoadImageRaw(fileName.c_str(), width, height, format, headerSize);
@@ -654,7 +791,8 @@ LoadMusicStream(const std::string &fileName)
 }
 
 Music
-LoadMusicStreamFromMemory(const std::string &fileType, unsigned char *data,
+LoadMusicStreamFromMemory(const std::string &fileType,
+                          const unsigned char *data,
                           int dataSize)
 {
     return LoadMusicStreamFromMemory(fileType.c_str(), data, dataSize);
