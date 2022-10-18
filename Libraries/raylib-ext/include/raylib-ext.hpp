@@ -67,6 +67,19 @@ Matrix& operator+=(Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator-=(Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator*=(Matrix &m1, const Matrix &m2) noexcept;
 
+/* Color */
+
+bool operator==(const Color &c1, const Color &c2) noexcept;
+Color operator+(const Color &c1, const Color &c2) noexcept;
+Color operator-(const Color &c1, const Color &c2) noexcept;
+Color operator*(const Color &c, const float f) noexcept;
+Color operator/(const Color &c, const float f);
+Color& operator+=(Color &c1, const Color &c2) noexcept;
+Color& operator-=(Color &c1, const Color &c2) noexcept;
+Color& operator*=(Color &c, const float f) noexcept;
+Color& operator/=(Color &c, const float f);
+std::ostream& operator<<(std::ostream &stream, Color &c) noexcept;
+
 /* Core */
 
 void 
