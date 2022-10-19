@@ -1,6 +1,6 @@
 add_subdirectory(raylib-static)
 add_subdirectory(raygui)
 add_subdirectory(raylib-ext)
-add_subdirectory(glad)
+add_subdirectory(glad-raylib)
 add_subdirectory(glfw-static)
 add_subdirectory(okna)
