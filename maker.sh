@@ -1,36 +1,30 @@
 #!/bin/sh
 
+debug() {
+    set -o xtrace
+    cmake -DBUILD_SHARED_LIBS=False \
+          -S . -B ./Build \
+          -D CMAKE_BUILD_TYPE=Debug \
+    && make -j -C ./Build
+}
+
 build() {
     set -o xtrace
     cmake -DBUILD_SHARED_LIBS=False \
-          -G Ninja -S . -B ./Build \
-          -D CMAKE_BUILD_TYPE=Debug \
-    && ninja -C ./Build
-}
-
-release() {
-    set -o xtrace
-    cmake -DBUILD_SHARED_LIBS=False \
-          -G Ninja -S . -B ./Build \
+          -S . -B ./Build \
           -D CMAKE_BUILD_TYPE=Release \
-    && ninja -C ./Build
-}
-
-winbuild() {
-    set -o xtrace
-    cmake -DBUILD_SHARED_LIBS=False \
-          -S . -B ./Build
+    && make -j -C ./Build
 }
 
 clean() {
     set -o xtrace
-    rm -rf ./Build/*
+    rm -rf ./Build
 }
 
 help() {
     echo "Использование:"
-    echo "./maker.sh build -> Собрать проект с помощью CMake и ninja -C ./Build/"
-    echo "./maker.sh winbuild -> Сгенерировать проектные файлы для Visual Studio 16 2019 в директорию ./Build/"
+    echo "./maker.sh build -> Собрать проект с помощью CMake и make -C ./Build/"
+    echo "./maker.sh debug -> Собрать проект с сохранением информации для отладки"
     echo "./maker.sh clean -> Удалить содержимое директории ./Build/"
 }
 
