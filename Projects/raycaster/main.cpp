@@ -4,15 +4,16 @@
 #include <iostream>
 
 #define RUN_RAYCASTER
-#define RAYCAST_TEXTURES
+// #define RAYCAST_TEXTURES
 
-const int screenWidth = 640;
-const int screenHeight = 640;
+const int screenWidth = 1440;
+const int screenHeight = 900;
 
 const int board_w = 8;
 const int board_h = 8;
 
-const int cell_size = screenWidth / board_w;
+const int worldSize = 800;
+const int cell_size = worldSize / board_w;
 
 int board[board_w][board_h] = {
     { 1, 1, 1, 1, 1, 1, 1, 1 },
@@ -30,11 +31,33 @@ Color wall_colors[] = {
     BLUE,
 };
 
-struct player_t {
+struct player_t
+{
     Vector2 pos;
     float rotation;
     float speed;
 };
+
+#ifdef RUN_RAYCASTER
+struct hit_t {
+    Vector2 pos;
+    struct { int x, y; } cell_pos;
+    bool is_horizontal;
+    float angle;
+};
+#endif
+
+struct RenderConfig
+{
+#ifdef RUN_RAYCASTER
+    std::vector<hit_t> hits;
+    float fov;
+    int rays_count;
+    float delta_angle;
+    float rect_w;
+#endif
+};
+
 
 bool
 check_collision(Vector2 position, float radius)
@@ -51,7 +74,7 @@ check_collision(Vector2 position, float radius)
 }
 
 void
-DrawTopDownView(const player_t &player)
+DrawTopDownView(const player_t &player, const RenderConfig &config)
 {
     for (int row = 0; row < board_h; ++row) {
         for (int col = 0; col < board_w; ++col) {
@@ -67,15 +90,22 @@ DrawTopDownView(const player_t &player)
         }
     }
 
-    for (int x = cell_size; x < screenWidth; x += cell_size) {
-        DrawLine(x, 0, x, screenHeight, GRAY);
+    for (int x = cell_size; x < worldSize; x += cell_size) {
+        DrawLine(x, 0, x, worldSize, GRAY);
     }
-    for (int y = cell_size; y < screenHeight; y += cell_size) {
-        DrawLine(0, y, screenWidth, y, GRAY);
+    for (int y = cell_size; y < worldSize; y += cell_size) {
+        DrawLine(0, y, worldSize, y, GRAY);
     }
 
     DrawCircleV(player.pos, 14, RED);
+#ifdef RUN_RAYCASTER
+    for (const hit_t &hit : config.hits)
+        DrawLineEx(player.pos, hit.pos, 2, BLUE);
+#else
     DrawLineEx(player.pos, player.pos + Vector2Rotate({ 1,0 }, player.rotation) * 25, 5, BLUE);
+#endif
+
+
 }
 
 #ifdef RUN_RAYCASTER
@@ -83,13 +113,6 @@ Image images[] = {
     LoadImage("./Assets/textures/TECH_1A.png"), // NULL
     LoadImage("./Assets/textures/walltile.png"),
     LoadImage("./Assets/textures/walltile2.png"),
-};
-
-struct hit_t {
-    Vector2 pos;
-    struct { int x, y; } cell_pos;
-    bool is_horizontal;
-    float angle;
 };
 
 inline bool
@@ -187,26 +210,11 @@ hit_t cast_ray(Vector2 pos, float dir)
     }
 }
 
-struct RaycastConfig
-{
-    float fov;
-    int rays_count;
-    float delta_angle;
-    float rect_w;
-};
-
 void
-DrawRaycastView(const player_t &player, const RaycastConfig &config)
+DrawRaycastView(const player_t &player, const RenderConfig &config)
 {
-    std::vector<hit_t> hits;
-    for (float angle = -config.fov / 2; angle < config.fov / 2; angle += config.delta_angle) {
-        hit_t hit = cast_ray(player.pos, player.rotation + angle);
-        DrawLineEx(player.pos, hit.pos, 2, BLUE);
-        hits.push_back(hit);
-    }
-
     float rect_x = 0;
-    for (hit_t& hit : hits)
+    for (const hit_t &hit : config.hits)
     {
         Vector2 hit_delta = hit.pos - player.pos;
         float dist = hit_delta.x * cos(player.rotation) +
@@ -235,7 +243,7 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
             Color pixel = color_data[i * cell_image.width + col];
 
             DrawRectangle(
-                screenWidth + rect_x, rect_y + pix_h * i,
+                rect_x, rect_y + pix_h * i,
                 config.rect_w + 1, pix_h + 1, pixel
             );
         }
@@ -245,7 +253,7 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
             wall_color *= 0.8f;
 
         DrawRectangle(
-            screenWidth + rect_x, rect_y,
+            rect_x, rect_y,
             config.rect_w + 1, rect_h + 1, wall_color
         );
 #endif
@@ -258,21 +266,24 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
 int main()
 {
 #ifdef RUN_RAYCASTER
-    InitWindow(screenWidth * 2, screenHeight, "GDSC: Creative Coding");
+    InitWindow(screenWidth, screenHeight, "GDSC: Creative Coding");
 #else
     InitWindow(screenWidth, screenHeight, "GDSC: Creative Coding");
 #endif
     SetTargetFPS(60);
+    ToggleFullscreen();
 
     player_t player;
-    player.pos = { screenWidth / 2, screenHeight / 2 };
+    player.pos = { worldSize / 2, worldSize / 2 };
     player.speed = 100;
     player.rotation = 0;
 
+    RenderTexture2D view = LoadRenderTexture(worldSize, worldSize);
+
 #ifdef RUN_RAYCASTER
-    RaycastConfig config;
-    config.fov = 60 * DEG2RAD;
-    config.rays_count = 240;
+    RenderConfig config;
+    config.fov = 85 * DEG2RAD;
+    config.rays_count = 1440;
     config.delta_angle = config.fov / config.rays_count;
     config.rect_w = (screenWidth / config.fov) * config.delta_angle;
 #endif
@@ -317,15 +328,34 @@ int main()
         if (check_collision(player.pos, 15))
             player.pos -= move;
 
+        config.hits.clear();
+        for (float angle = -config.fov / 2; angle < config.fov / 2; angle += config.delta_angle) {
+            hit_t hit = cast_ray(player.pos, player.rotation + angle);
+            config.hits.push_back(hit);
+        }
+
+        BeginTextureMode(view);
+        {
+            DrawTopDownView(player, config);
+        }
+        EndTextureMode();
 
         BeginDrawing();
         {
             ClearBackground(SKYBLUE);
-            DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, BEIGE);
-            DrawTopDownView(player);
+            DrawRectangle(0, screenHeight / 2, screenWidth, screenHeight, BEIGE);
 #ifdef RUN_RAYCASTER
             DrawRaycastView(player, config);
 #endif
+            float map_scale = 0.4;
+            float map_size = map_scale * worldSize;
+            DrawTexturePro(
+                view.texture,
+                Rectangle { 0, 0, worldSize, worldSize },
+                Rectangle { 0, screenHeight - map_size, map_size, map_size },
+                Vector2 { 0, 0 },
+                0, WHITE
+            );
         }
         EndDrawing();
     }

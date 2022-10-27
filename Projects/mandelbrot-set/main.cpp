@@ -139,22 +139,28 @@ set_viewport(context_t *context, Rectangle rect)
 int
 main(void)
 {
-    const int screen_width = 800;
+    const int screen_width = 960;
     const int screen_height = 600;
     const float aspect = screen_width * 1.0 / screen_height;
 
-    InitWindow(screen_width, screen_height, "Creative Coding: Mandelbrot Set");
+    const float scale_w = screen_width * 1.0f / 1440;
+    const float scale_h = screen_height * 1.0f / 900;
+    InitWindow(1440, 900, "Creative Coding: Mandelbrot Set");
+    ToggleFullscreen();
     SetTargetFPS(60);
 
     context_t context = {
         { screen_width, screen_height }, // screen_size
         // Bottom and top are swapped for natural Y axis direction
-        { -2, 0.5, 1.12, -1.12 }, // viewport
+        { -2.2, 0.9, 1.12, -1.12 }, // viewport
         100, // max_iterations
         std::vector(screen_width, std::vector<pixel_data_t>(screen_height)),
     };
 
     set_viewport(&context, { 0, 0, screen_width, screen_height });
+    RenderTexture2D view = LoadRenderTexture(screen_width, screen_height);
+    Texture tex;
+    Image img;
 
     Rectangle selected_rect = { 0, 0, 0, 0 };
     bool selecting = false;
@@ -168,7 +174,7 @@ main(void)
         );
         SetWindowTitle(title);
 
-        BeginDrawing();
+        BeginTextureMode(view);
         {
             ClearBackground(BLACK);
 
@@ -204,27 +210,41 @@ main(void)
             }
                 
         }
+        EndTextureMode();
+
+        BeginDrawing();
+        {
+            img = LoadImageFromTexture(view.texture);
+            ImageFlipVertical(&img);
+            tex = LoadTextureFromImage(img);
+            DrawTexturePro(
+                tex,
+                Rectangle { 0, 0, screen_width, screen_height},
+                Rectangle { 0, 0, 1440, 900 },
+                Vector2 { 0, 0 },
+                0, WHITE
+            );
+        }
         EndDrawing();
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            context.viewport = { -2, 0.5, 1.12, -1.12 };
+            context.viewport = { -2.2, 0.9, 1.12, -1.12 }; // viewport
             context.max_iterations = 100;
             set_viewport(&context, { 0, 0, screen_width, screen_height });
         }
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         {
-            selected_rect.x = float(GetMouseX());
-            selected_rect.y = float(GetMouseY());
+            selected_rect.x = float(GetMouseX()) * scale_w;
+            selected_rect.y = float(GetMouseY()) * scale_h;
             selecting = true;
-
         }
 
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
         {
-            selected_rect.width =  float(GetMouseX()) - selected_rect.x;
-            selected_rect.height = float(GetMouseY()) - selected_rect.y;
+            selected_rect.width =  float(GetMouseX()) * scale_w - selected_rect.x;
+            selected_rect.height = float(GetMouseY()) * scale_h - selected_rect.y;
             selected_rect.height = copysign(selected_rect.width / aspect, selected_rect.height);
         }
 

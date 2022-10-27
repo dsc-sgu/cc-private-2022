@@ -4,16 +4,17 @@
 
 int main()
 {
-    const int screen_radius = 350;
-    const int screen_width = screen_radius * 2;
-    const int screen_height = screen_radius * 2;
+    const int screen_radius = 420;
+    const int screen_width = 1440;
+    const int screen_height = 900;
 
     InitWindow(screen_width, screen_height, "Creative Coding: Times Table");
+    ToggleFullscreen();
     SetTargetFPS(60);
 
     const int lines_count = 200;
     const int radius = screen_radius - 10;
-    const Vector2 center = { screen_radius, screen_radius };
+    const Vector2 center = { screen_width / 2, screen_height / 2 };
     const float step = 0.01f;
     const float theta = 2.0 * PI / lines_count;
 

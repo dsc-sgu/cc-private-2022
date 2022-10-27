@@ -5,8 +5,8 @@ const Color BG_COLOR = BLACK;
 const Color ACTIVE_COLOR = GREEN;
 const Color BORDER_COLOR = DARKGRAY;
 
-const int WINDOW_W = 800;
-const int WINDOW_H = 800;
+const int WINDOW_W = 1440;
+const int WINDOW_H = 900;
 
 const int SQUARE_SIZE = 20;
 const int BOARD_W = WINDOW_W / SQUARE_SIZE;
@@ -45,6 +45,7 @@ void update_board()
 int main()
 {
     InitWindow(WINDOW_W, WINDOW_H, "Creative Coding: Game of Life");
+    ToggleFullscreen();
     SetTargetFPS(60);
 
     // Game state
