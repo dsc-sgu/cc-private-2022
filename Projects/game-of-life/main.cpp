@@ -1,5 +1,6 @@
 #define RAYEXT_IMPLEMENTATION
 #include <raylib-ext.hpp>
+#include <cstring>
 
 const Color BG_COLOR = BLACK;
 const Color ACTIVE_COLOR = GREEN;
