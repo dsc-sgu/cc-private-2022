@@ -139,8 +139,10 @@ set_viewport(context_t *context, Rectangle rect)
 int
 main(void)
 {
-    const int screen_width = 800;
-    const int screen_height = 600;
+    // const int screen_width = 800;
+    // const int screen_height = 600;
+    const int screen_width = 1280;
+    const int screen_height = 720;
     const float aspect = screen_width * 1.0 / screen_height;
 
     InitWindow(screen_width, screen_height, "Creative Coding: Mandelbrot Set");
