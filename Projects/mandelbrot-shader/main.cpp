@@ -64,12 +64,15 @@ set_viewport(context_t *context, Rectangle rect)
 int
 main(void)
 {
-    const int screen_width = 1280;
-    const int screen_height = 800;
+    // const int screen_width = 1280;
+    // const int screen_height = 800;
+    const int screen_width = 1440;
+    const int screen_height = 900;
     const float aspect = screen_width * 1.0 / screen_height;
 
     InitWindow(screen_width, screen_height, "Creative Coding: Mandelbrot Set");
     SetTargetFPS(60);
+    ToggleFullscreen();
 
     context_t context = {
         Vector2 { screen_width, screen_height },
@@ -80,6 +83,7 @@ main(void)
     Rectangle selected_rect = { 0, 0, 0, 0 };
     bool selecting = false;
 
+    // Mandelbrot shader
     RenderTexture2D target = LoadRenderTexture(screen_width, screen_height);
     Shader shader = LoadShader(0, "Assets/shaders/mandelbrot.frag");
     SetShaderValue(
@@ -91,9 +95,16 @@ main(void)
     int viewport_loc = GetShaderLocation(shader, "viewport");
     SetShaderValue(shader, viewport_loc, &context.viewport, SHADER_UNIFORM_VEC4);
 
+    float time = 0.0f;
+    int time_loc = GetShaderLocation(shader, "time");
+    SetShaderValue(shader, time_loc, &time, SHADER_UNIFORM_FLOAT);
+
     while (!WindowShouldClose())
     {
         float deltatime = GetFrameTime();
+        time += deltatime;
+        SetShaderValue(shader, time_loc, &time, SHADER_UNIFORM_FLOAT);
+
         char title[128];
         snprintf(
             title, sizeof(title),
@@ -103,16 +114,21 @@ main(void)
         SetWindowTitle(title);
 
         BeginTextureMode(target);
-            ClearBackground(BLACK);
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+            BeginShaderMode(shader);
+                DrawTextureEx(target.texture, (Vector2){ 0.0f, 0.0f }, 0.0f, 1.0f, WHITE);
+            EndShaderMode();
         EndTextureMode();
 
         BeginDrawing();
         {
             ClearBackground(BLACK);
-            BeginShaderMode(shader);
-                DrawTextureEx(target.texture, (Vector2){ 0.0f, 0.0f }, 0.0f, 1.0f, WHITE);
-            EndShaderMode();
+
+            DrawTextureRec(
+                target.texture,
+                Rectangle {0, 0, float(target.texture.width), float(-target.texture.height)},
+                Vector2 {0, 0},
+                WHITE
+            );
 
             if (selecting)
             {
