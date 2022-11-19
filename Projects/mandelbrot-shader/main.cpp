@@ -1,10 +1,15 @@
 #include <raylib-ext.hpp>
 #include <string>
 
+struct v2d
+{
+    double x, y;
+};
+
 struct viewport_t
 {
-    float left, right;
-    float bottom, top;
+    double left, right;
+    double bottom, top;
 };
 
 struct context_t
@@ -13,14 +18,14 @@ struct context_t
     viewport_t viewport;
 };
 
-Vector2
-screen_to_local(context_t *ctx, Vector2 point)
+v2d
+screen_to_local(context_t *ctx, v2d point)
 {
-    Vector2 d = {
+    v2d d = {
         ctx->viewport.right - ctx->viewport.left,
         ctx->viewport.top - ctx->viewport.bottom
     };
-    return Vector2 {
+    return v2d {
         (point.x / ctx->screen_size.x) * d.x + ctx->viewport.left,
         (point.y / ctx->screen_size.y) * d.y + ctx->viewport.bottom,
     };
@@ -46,9 +51,9 @@ fix_rect(Rectangle rect)
 void
 set_viewport(context_t *context, Rectangle rect)
 {
-    Vector2 p0 = screen_to_local(context, Vector2 { rect.x, rect.y });
-    Vector2 p1 = screen_to_local(
-        context, Vector2 {
+    v2d p0 = screen_to_local(context, v2d { rect.x, rect.y });
+    v2d p1 = screen_to_local(
+        context, v2d {
             rect.x + rect.width,
             rect.y + rect.height
         }
@@ -61,18 +66,24 @@ set_viewport(context_t *context, Rectangle rect)
     };
 }
 
+Vector2 double_to_ds(double d)
+{
+     float x = (float) d;
+     float y = d - (double) x;
+     return Vector2 { x, y };
+}
+
 int
 main(void)
 {
-    // const int screen_width = 1280;
-    // const int screen_height = 800;
-    const int screen_width = 1440;
-    const int screen_height = 900;
-    const float aspect = screen_width * 1.0 / screen_height;
+    const int screen_width = 1280;
+    const int screen_height = 800;
+    /* const int screen_width = 1440; */
+    /* const int screen_height = 900; */
+    const double aspect = screen_width * 1.0 / screen_height;
 
     InitWindow(screen_width, screen_height, "Creative Coding: Mandelbrot Set");
-    SetTargetFPS(60);
-    ToggleFullscreen();
+    /* ToggleFullscreen(); */
 
     context_t context = {
         Vector2 { screen_width, screen_height },
@@ -93,7 +104,15 @@ main(void)
         SHADER_UNIFORM_VEC2
     );
     int viewport_loc = GetShaderLocation(shader, "viewport");
-    SetShaderValue(shader, viewport_loc, &context.viewport, SHADER_UNIFORM_VEC4);
+    viewport_t v = context.viewport;
+    Vector2 v1 = double_to_ds(v.left);
+    Vector2 v2 = double_to_ds(v.right);
+    Vector2 v3 = double_to_ds(v.top);
+    Vector2 v4 = double_to_ds(v.bottom);
+    SetShaderValue(shader, GetShaderLocation(shader, "l"), (float*)(&v1), SHADER_UNIFORM_VEC2);
+    SetShaderValue(shader, GetShaderLocation(shader, "r"), (float*)(&v2), SHADER_UNIFORM_VEC2);
+    SetShaderValue(shader, GetShaderLocation(shader, "t"), (float*)(&v3), SHADER_UNIFORM_VEC2);
+    SetShaderValue(shader, GetShaderLocation(shader, "b"), (float*)(&v4), SHADER_UNIFORM_VEC2);
 
     float time = 0.0f;
     int time_loc = GetShaderLocation(shader, "time");
@@ -143,7 +162,15 @@ main(void)
         {
             context.viewport = { -2, 0.5, -1.12, 1.12 };
             set_viewport(&context, { 0, 0, screen_width, screen_height });
-            SetShaderValue(shader, viewport_loc, &context.viewport, SHADER_UNIFORM_VEC4);
+            viewport_t v = context.viewport;
+            Vector2 v1 = double_to_ds(v.left);
+            Vector2 v2 = double_to_ds(v.right);
+            Vector2 v3 = double_to_ds(v.top);
+            Vector2 v4 = double_to_ds(v.bottom);
+            SetShaderValue(shader, GetShaderLocation(shader, "l"), (float*)(&v1), SHADER_UNIFORM_VEC2);
+            SetShaderValue(shader, GetShaderLocation(shader, "r"), (float*)(&v2), SHADER_UNIFORM_VEC2);
+            SetShaderValue(shader, GetShaderLocation(shader, "t"), (float*)(&v3), SHADER_UNIFORM_VEC2);
+            SetShaderValue(shader, GetShaderLocation(shader, "b"), (float*)(&v4), SHADER_UNIFORM_VEC2);
         }
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -164,7 +191,15 @@ main(void)
         if (selecting && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
         {
             set_viewport(&context, fix_rect(selected_rect));
-            SetShaderValue(shader, viewport_loc, &context.viewport, SHADER_UNIFORM_VEC4);
+            viewport_t v = context.viewport;
+            Vector2 v1 = double_to_ds(v.left);
+            Vector2 v2 = double_to_ds(v.right);
+            Vector2 v3 = double_to_ds(v.top);
+            Vector2 v4 = double_to_ds(v.bottom);
+            SetShaderValue(shader, GetShaderLocation(shader, "l"), (float*)(&v1), SHADER_UNIFORM_VEC2);
+            SetShaderValue(shader, GetShaderLocation(shader, "r"), (float*)(&v2), SHADER_UNIFORM_VEC2);
+            SetShaderValue(shader, GetShaderLocation(shader, "t"), (float*)(&v3), SHADER_UNIFORM_VEC2);
+            SetShaderValue(shader, GetShaderLocation(shader, "b"), (float*)(&v4), SHADER_UNIFORM_VEC2);
         }
 
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))

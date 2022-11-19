@@ -8,19 +8,112 @@ out vec4 finalColor;
 
 uniform vec2 resolution;
 uniform vec4 viewport;
+uniform vec2 l;
+uniform vec2 r;
+uniform vec2 t;
+uniform vec2 b;
 uniform float time;
 
-vec2 product(vec2 a, vec2 b)
+vec2 ds_set(float a)
 {
-    return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+    vec2 z;
+    z.x = a;
+    z.y = 0.0;
+    return z;
 }
 
-vec2 powc(vec2 c, int p)
+vec2 ds_mul (vec2 dsa, vec2 dsb)
 {
-    vec2 res = c;
+    vec2 dsc;
+    float c11, c21, c2, e, t1, t2;
+    float a1, a2, b1, b2, cona, conb, split = 8193.;
+
+    cona = dsa.x * split;
+    conb = dsb.x * split;
+    a1 = cona - (cona - dsa.x);
+    b1 = conb - (conb - dsb.x);
+    a2 = dsa.x - a1;
+    b2 = dsb.x - b1;
+
+    c11 = dsa.x * dsb.x;
+    c21 = a2 * b2 + (a2 * b1 + (a1 * b2 + (a1 * b1 - c11)));
+
+    c2 = dsa.x * dsb.y + dsa.y * dsb.x;
+
+    t1 = c11 + c2;
+    e = t1 - c11;
+    t2 = dsa.y * dsb.y + ((c2 - e) + (c11 - (t1 - e))) + c21;
+
+    dsc.x = t1 + t2;
+    dsc.y = t2 - (dsc.x - t1);
+
+    return dsc;
+}
+
+vec2 ds_add (vec2 dsa, vec2 dsb)
+{
+    vec2 dsc;
+    float t1, t2, e;
+
+    t1 = dsa.x + dsb.x;
+    e = t1 - dsa.x;
+    t2 = ((dsb.x - e) + (dsa.x - (t1 - e))) + dsa.y + dsb.y;
+
+    dsc.x = t1 + t2;
+    dsc.y = t2 - (dsc.x - t1);
+    return dsc;
+}
+
+// Substract: res = ds_sub(a, b) => res = a - b
+vec2 ds_sub (vec2 dsa, vec2 dsb)
+{
+    vec2 dsc;
+    float e, t1, t2;
+
+    t1 = dsa.x - dsb.x;
+    e = t1 - dsa.x;
+    t2 = ((-dsb.x - e) + (dsa.x - (t1 - e))) + dsa.y - dsb.y;
+
+    dsc.x = t1 + t2;
+    dsc.y = t2 - (dsc.x - t1);
+    return dsc;
+}
+
+float ds_compare(vec2 dsa, vec2 dsb)
+{
+    if (dsa.x < dsb.x) return -1.;
+    else if (dsa.x == dsb.x) 
+    {
+        if (dsa.y < dsb.y) return -1.;
+        else if (dsa.y == dsb.y) return 0.;
+        else return 1.;
+    }
+    else return 1.;
+}
+
+struct complex_long {
+    vec2 r;
+    vec2 i;
+};
+
+complex_long product(complex_long a, complex_long b)
+{
+    return complex_long( ds_sub(ds_mul(a.r, b.r), ds_mul(a.i, b.i))
+                       , ds_add(ds_mul(a.r, b.i), ds_mul(a.i, b.r))
+                       );
+}
+
+complex_long powc(complex_long c, int p)
+{
+    complex_long res = c;
     for (int i = 1; i < p; ++i)
         res = product(res, c);
     return res;
+}
+
+vec2 dot(complex_long a, complex_long b)
+{
+    return ds_add(ds_mul(a.r, b.r), ds_mul(a.i, b.i));
 }
 
 float f(float x, float q, float p)
@@ -29,96 +122,38 @@ float f(float x, float q, float p)
     return a * a;
 }
 
-// All components are in the range [0…1], including hue.
-vec3 rgb2hsv(vec3 c)
-{
-    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-
-    float d = q.x - min(q.w, q.y);
-    float e = 1.0e-10;
-    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-}
-
-// All components are in the range [0…1], including hue.
-vec3 hsv2rgb(vec3 c)
-{
-    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-vec3 f2(int iterations)
-{
-    return hsv2rgb(vec3(float(int(iterations * 10) % 256) / 256.0, 1.0, 1.0));
-}
-
-vec3 f3(int iterations)
-{
-    return hsv2rgb(vec3(
-        ( sin(float(iterations))
-        + sin(float(iterations) / 3.0)
-        + sin(float(iterations) / 5.0))
-        * time * 0.5,
-        1.0,
-        1.0
-    ));
-}
-
 void main()
 {
-    vec2 uv = fragTexCoord * (viewport.yw - viewport.xz) + viewport.xz;
+    // vec2 uv = fragTexCoord * (viewport.yw - viewport.xz) + viewport.xz;
+    vec2 v = ds_sub(t, b);
+    vec2 h = ds_sub(r, l);
+    vec2 uvx = ds_add(ds_mul(ds_set(fragTexCoord.x), h), l);
+    vec2 uvy = ds_add(ds_mul(ds_set(fragTexCoord.y), v), b);
 
-    vec2 z = vec2(0.0, 0.0);
-    vec2 c = uv.xy;
+    complex_long z = complex_long(ds_set(0.0), ds_set(0.0));
+    complex_long c = complex_long(uvx, uvy);
 
     int iterations = 0;
     bool inside = true;
     for (int i = 0; i < 200; i++)
     {
-        z = powc(z, 2) + c;
+        complex_long z2 = powc(z, 2);
+        z = complex_long(ds_add(z2.r, c.r), ds_add(z2.i, c.i));
 
         iterations += 1;
-        if (dot(z, z) > 4.0)
+        vec2 d = dot(z, z);
+        if (ds_compare(d, ds_set(4.0)) > 0)
         {
             inside = false;
             break;
         }
     }
 
-    if (inside)
-    {
-        float k = mod(time * 0.8, M_PI);
-        finalColor = vec4(
-            f(float(iterations), 1.0, k + 0.0),
-            f(float(iterations), 1.0, k + 120.0),
-            f(float(iterations), 1.0, k + 240.0),
-            1.0
-        );
-    }
-    else if (true)
-    {
-        float k = mod(time * 0.8, M_PI);
-        finalColor = vec4(
-            f(float(iterations), 1.0, k + 0.0),
-            f(float(iterations), 1.0, k + 120.0),
-            f(float(iterations), 1.0, k + 240.0),
-            1.0
-        );
-    }
-    else if (false)
-    {
-        float k = pow(time, 2) * 0.003;
-        finalColor = vec4(
-            f(float(iterations), 1.0, k * 0.0),
-            f(float(iterations), 1.0, k * 120.0),
-            f(float(iterations), 1.0, k * 240.0),
-            1.0
-        );
-    }
-    else if (true)
-    {
-        finalColor = vec4(f3(iterations), 1.0);
-    }
+    float k = mod(time, M_PI);
+    finalColor = vec4(
+        f(float(iterations), 1.0, k + 0.0),
+        f(float(iterations), 1.0, k + 120.0),
+        f(float(iterations), 1.0, k + 240.0),
+        1.0
+    );
 }
