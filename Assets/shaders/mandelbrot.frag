@@ -29,53 +29,11 @@ float f(float x, float q, float p)
     return a * a;
 }
 
-// All components are in the range [0…1], including hue.
-vec3 rgb2hsv(vec3 c)
+void basic(vec2 z, vec2 c)
 {
-    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-
-    float d = q.x - min(q.w, q.y);
-    float e = 1.0e-10;
-    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-}
-
-// All components are in the range [0…1], including hue.
-vec3 hsv2rgb(vec3 c)
-{
-    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-vec3 f2(int iterations)
-{
-    return hsv2rgb(vec3(float(int(iterations * 10) % 256) / 256.0, 1.0, 1.0));
-}
-
-vec3 f3(int iterations)
-{
-    return hsv2rgb(vec3(
-        ( sin(float(iterations))
-        + sin(float(iterations) / 3.0)
-        + sin(float(iterations) / 5.0))
-        * time * 0.5,
-        1.0,
-        1.0
-    ));
-}
-
-void main()
-{
-    vec2 uv = fragTexCoord * (viewport.yw - viewport.xz) + viewport.xz;
-
-    vec2 z = vec2(0.0, 0.0);
-    vec2 c = uv.xy;
-
     int iterations = 0;
     bool inside = true;
-    for (int i = 0; i < 200; i++)
+    for (int i = 0; i < 1000; i++)
     {
         z = powc(z, 2) + c;
 
@@ -86,39 +44,53 @@ void main()
             break;
         }
     }
+    if (inside) finalColor = vec4(vec3(0.0), 1.0);
+    else
+    {
+        float k = mod(time * 0.8, M_PI);
+        finalColor = vec4(
+            f(float(iterations), 1.0, k + 0.0),
+            f(float(iterations), 1.0, k + 120.0),
+            f(float(iterations), 1.0, k + 240.0),
+            1.0
+        );
+    }
+}
 
-    if (inside)
+void smooth_color(vec2 z, vec2 c)
+{
+    float val = 0.0;
+    for(int n = 0; n < 1000; n++)
+    {
+        float tmp = z.x;
+        z.x = (z.x * z.x - z.y * z.y) + c.x;
+        z.y = (z.y * tmp) * 2 + c.y;
+        if (dot(z, z) > 4.0)
+        {
+            val = float(n) + 1.0 - log(log(length(z))) / log(2.0);
+            break;
+        }
+    }
+    if (val == 0.0) finalColor = vec4(vec3(0.0), 1.0);
+    else
     {
         float k = mod(time * 0.8, M_PI);
         finalColor = vec4(
-            f(float(iterations), 1.0, k + 0.0),
-            f(float(iterations), 1.0, k + 120.0),
-            f(float(iterations), 1.0, k + 240.0),
+            f(val, 1.0, k + 0.0),
+            f(val, 1.0, k + 120.0),
+            f(val, 1.0, k + 240.0),
             1.0
         );
     }
-    else if (true)
-    {
-        float k = mod(time * 0.8, M_PI);
-        finalColor = vec4(
-            f(float(iterations), 1.0, k + 0.0),
-            f(float(iterations), 1.0, k + 120.0),
-            f(float(iterations), 1.0, k + 240.0),
-            1.0
-        );
-    }
-    else if (false)
-    {
-        float k = pow(time, 2) * 0.003;
-        finalColor = vec4(
-            f(float(iterations), 1.0, k * 0.0),
-            f(float(iterations), 1.0, k * 120.0),
-            f(float(iterations), 1.0, k * 240.0),
-            1.0
-        );
-    }
-    else if (true)
-    {
-        finalColor = vec4(f3(iterations), 1.0);
-    }
+}
+
+void main()
+{
+    vec2 uv = fragTexCoord * (viewport.yw - viewport.xz) + viewport.xz;
+
+    vec2 z = vec2(0.0, 0.0);
+    vec2 c = uv.xy;
+
+    smooth_color(z, c);
+    // basic(z, c);
 }
