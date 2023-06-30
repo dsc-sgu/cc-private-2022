@@ -36,6 +36,11 @@ struct player_t {
     float speed;
 };
 
+struct object_t {
+    Vector2 pos;
+    Image image;
+};
+
 bool
 check_collision(Vector2 position, float radius)
 {
@@ -81,8 +86,8 @@ DrawTopDownView(const player_t &player)
 #ifdef RUN_RAYCASTER
 Image images[] = {
     LoadImage("./Assets/textures/TECH_1A.png"), // NULL
-    LoadImage("./Assets/textures/walltile.png"),
-    LoadImage("./Assets/textures/walltile2.png"),
+    LoadImage("./Assets/textures/TECH_1A16.png"),
+    LoadImage("./Assets/textures/SUPPORT_3.png"),
 };
 
 struct hit_t {
@@ -106,7 +111,8 @@ fix_angle(float angle)
     return angle;
 }
 
-hit_t cast_ray(Vector2 pos, float dir)
+hit_t
+cast_ray(Vector2 pos, float dir)
 {
     dir = fix_angle(dir);
 
@@ -196,7 +202,8 @@ struct RaycastConfig
 };
 
 void
-DrawRaycastView(const player_t &player, const RaycastConfig &config)
+DrawRaycastView(const player_t &player, const std::vector<object_t> &objects,
+                const RaycastConfig &config)
 {
     std::vector<hit_t> hits;
     for (float angle = -config.fov / 2; angle < config.fov / 2; angle += config.delta_angle) {
@@ -245,12 +252,92 @@ DrawRaycastView(const player_t &player, const RaycastConfig &config)
             wall_color *= 0.8f;
 
         DrawRectangle(
-            screenWidth + rect_x, rect_y,
-            config.rect_w + 1, rect_h + 1, wall_color
+            screenWidth + rect_x, rect_y, config.rect_w + 1, rect_h + 1, wall_color
         );
 #endif
 
         rect_x += config.rect_w;
+    }
+
+    for (auto &object : objects)
+    {
+        Vector2 player_to_object = object.pos - player.pos;
+        Vector2 anti_normal = Vector2Normalize(Vector2Rotate(player_to_object, 90 * DEG2RAD));
+        Vector2 a = object.pos - anti_normal * cell_size / 2;
+        Vector2 b = object.pos + anti_normal * cell_size / 2;
+        Vector2 dir = Vector2Rotate({ 1, 0 }, player.rotation);
+
+        DrawLineEx(a, b, 5, RED);
+
+        float start_angle = fix_angle(Vector2Angle(dir, a - player.pos));
+        float end_angle = fix_angle(Vector2Angle(dir, b - player.pos));
+
+        if (start_angle > end_angle)
+        {
+            std::swap(a, b);
+            std::swap(start_angle, end_angle);
+        }
+        std::cout << start_angle << ' ' << end_angle << '\n';
+
+        float fov = end_angle - start_angle;
+        int rays_count = fov / config.fov * config.rays_count;
+
+        float hue = 0;
+
+        for (float angle = start_angle; angle < end_angle; angle += config.delta_angle)
+        {
+            Vector2 point = player.pos + Vector2Rotate({ 1, 0 }, player.rotation + angle) * Vector2Length(a - player.pos);
+            hit_t hit = cast_ray(player.pos, player.rotation - Vector2Angle(point - player.pos, dir));
+
+            DrawLineEx(player.pos, point, 2, GREEN);
+            // DrawLineEx(player.pos, hit.pos, 2, MAGENTA);
+
+            auto hit_delta = point - player.pos;
+            if (Vector2Length(player.pos - hit.pos) > Vector2Length(hit_delta))
+            {
+                float dist = Vector2Length(hit_delta);
+
+                float rect_h = (cell_size * screenHeight) / dist;
+                float rect_y = (screenHeight - rect_h) / 2;
+
+                float rect_xa = fix_angle(Vector2Angle(Vector2Rotate(dir, -config.fov / 2), a - player.pos)) / config.fov * screenWidth;
+                float rect_xb = fix_angle(Vector2Angle(Vector2Rotate(dir, -config.fov / 2), b - player.pos)) / config.fov * screenWidth;
+                float rect_w = (rect_xb - rect_xa) / rays_count;
+                // std::cout << rect_xa << ' ' << rect_xb << '\n';
+
+                rect_x = fix_angle(Vector2Angle(Vector2Rotate(dir, -config.fov / 2), point - player.pos)) / config.fov * screenWidth;
+                // std::cout << rect_x << '\n';
+                if (rect_x + rect_w < 0)
+                    continue;
+                if (rect_x < 0)
+                    rect_x = 0;
+
+                // DrawRectangle(
+                //     screenWidth + rect_x, rect_y, rect_w + 1, rect_h + 1, ColorFromHSV(hue, 1, 1)
+                // );
+                // hue += 25;
+
+                Vector2 pos_in_cell = {
+                    hit.pos.x - hit.cell_pos.x * cell_size,
+                    hit.pos.y - hit.cell_pos.y * cell_size,
+                };
+                float pix_h = rect_h / object.image.height;
+                Vector2 column = pos_in_cell / cell_size * object.image.width;
+                int col = column.y;
+
+                for (int i = 0; i < object.image.height; ++i)
+                {
+                    Color* color_data = (Color*)object.image.data;
+                    Color pixel = color_data[i * object.image.width + col];
+
+                    DrawRectangle(
+                        screenWidth + rect_x, rect_y + pix_h * i,
+                        rect_w + 1, pix_h + 1, pixel
+                    );
+                }
+
+            }
+        }
     }
 }
 #endif
@@ -265,14 +352,21 @@ int main()
     SetTargetFPS(60);
 
     player_t player;
-    player.pos = { screenWidth / 2, screenHeight / 2 };
+    player.pos = { screenWidth / 2., screenHeight / 2. };
     player.speed = 100;
     player.rotation = 0;
+
+    std::vector<object_t> objects;
+
+    object_t barrel;
+    barrel.pos = { 5 * cell_size, 2 * cell_size };
+    barrel.image = LoadImage("./Assets/textures/walltile.png");
+    objects.push_back(barrel);
 
 #ifdef RUN_RAYCASTER
     RaycastConfig config;
     config.fov = 60 * DEG2RAD;
-    config.rays_count = 240;
+    config.rays_count = 64;
     config.delta_angle = config.fov / config.rays_count;
     config.rect_w = (screenWidth / config.fov) * config.delta_angle;
 #endif
@@ -320,11 +414,11 @@ int main()
 
         BeginDrawing();
         {
-            ClearBackground(SKYBLUE);
-            DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, BEIGE);
+            ClearBackground(DARKGRAY);
+            DrawRectangle(screenWidth, screenHeight / 2, screenWidth, screenHeight / 2, GRAY);
             DrawTopDownView(player);
 #ifdef RUN_RAYCASTER
-            DrawRaycastView(player, config);
+            DrawRaycastView(player, objects, config);
 #endif
         }
         EndDrawing();
