@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #define RUN_RAYCASTER
 #define RAYCAST_TEXTURES
@@ -20,7 +21,7 @@ int board[board_w][board_h] = {
     { 1, 0, 2, 0, 0, 0, 1, 1 },
     { 1, 2, 2, 0, 0, 0, 0, 1 },
     { 1, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 0, 0, 1 },
     { 1, 0, 1, 0, 0, 0, 0, 1 },
     { 1, 1, 1, 1, 1, 1, 1, 1 },
 };
@@ -201,6 +202,15 @@ struct RaycastConfig
     float rect_w;
 };
 
+Vector2
+slerp(Vector2 a, Vector2 b, float t)
+{
+    float omega = std::acos(Vector2DotProduct(Vector2Normalize(a), Vector2Normalize(b)));
+    float k1 = std::sin((1 - t) * omega) / std::sin(omega);
+    float k2 = std::sin(t * omega) / std::sin(omega);
+    return a * k1 + b * k2;
+}
+
 void
 DrawRaycastView(const player_t &player, const std::vector<object_t> &objects,
                 const RaycastConfig &config)
@@ -261,69 +271,46 @@ DrawRaycastView(const player_t &player, const std::vector<object_t> &objects,
 
     for (auto &object : objects)
     {
+        // std::cout << "=== START === " << std::endl;
         Vector2 player_to_object = object.pos - player.pos;
         Vector2 anti_normal = Vector2Normalize(Vector2Rotate(player_to_object, 90 * DEG2RAD));
+
         Vector2 a = object.pos - anti_normal * cell_size / 2;
         Vector2 b = object.pos + anti_normal * cell_size / 2;
-        Vector2 dir = Vector2Rotate({ 1, 0 }, player.rotation);
-
         DrawLineEx(a, b, 5, RED);
 
-        float start_angle = fix_angle(Vector2Angle(dir, a - player.pos));
-        float end_angle = fix_angle(Vector2Angle(dir, b - player.pos));
+        Vector2 dir = Vector2Rotate({ 1, 0 }, player.rotation);
 
-        if (start_angle > end_angle)
+        float start_angle = fix_angle(Vector2Angle({1, 0}, a - player.pos));
+        float end_angle = fix_angle(Vector2Angle({1, 0}, b - player.pos));
+
+        const float fov = std::abs(end_angle - start_angle);
+        const int rays_count = fov / config.fov * config.rays_count;
+
+        for (int ray_i = 0; ray_i < rays_count; ray_i++)
         {
-            std::swap(a, b);
-            std::swap(start_angle, end_angle);
-        }
-        std::cout << start_angle << ' ' << end_angle << '\n';
-
-        float fov = end_angle - start_angle;
-        int rays_count = fov / config.fov * config.rays_count;
-
-        float hue = 0;
-
-        for (float angle = start_angle; angle < end_angle; angle += config.delta_angle)
-        {
-            Vector2 point = player.pos + Vector2Rotate({ 1, 0 }, player.rotation + angle) * Vector2Length(a - player.pos);
+            Vector2 point = player.pos + slerp(a - player.pos, b - player.pos, ray_i * 1.0f / rays_count);
             hit_t hit = cast_ray(player.pos, player.rotation - Vector2Angle(point - player.pos, dir));
 
-            DrawLineEx(player.pos, point, 2, GREEN);
-            // DrawLineEx(player.pos, hit.pos, 2, MAGENTA);
-
-            auto hit_delta = point - player.pos;
-            if (Vector2Length(player.pos - hit.pos) > Vector2Length(hit_delta))
+            auto point_delta = point - player.pos;
+            float dist = Vector2Length(point_delta);
+            if (dist < Vector2Length(hit.pos - player.pos))
             {
-                float dist = Vector2Length(hit_delta);
-
+                // DrawLineEx(player.pos, point, 2, GREEN);
                 float rect_h = (cell_size * screenHeight) / dist;
                 float rect_y = (screenHeight - rect_h) / 2;
 
                 float rect_xa = fix_angle(Vector2Angle(Vector2Rotate(dir, -config.fov / 2), a - player.pos)) / config.fov * screenWidth;
                 float rect_xb = fix_angle(Vector2Angle(Vector2Rotate(dir, -config.fov / 2), b - player.pos)) / config.fov * screenWidth;
-                float rect_w = (rect_xb - rect_xa) / rays_count;
-                // std::cout << rect_xa << ' ' << rect_xb << '\n';
+                float rect_w = std::abs(rect_xb - rect_xa) / rays_count;
 
                 rect_x = fix_angle(Vector2Angle(Vector2Rotate(dir, -config.fov / 2), point - player.pos)) / config.fov * screenWidth;
-                // std::cout << rect_x << '\n';
-                if (rect_x + rect_w < 0)
-                    continue;
-                if (rect_x < 0)
-                    rect_x = 0;
+                if (rect_x + rect_w < 0) continue;
+                if (rect_x < 0) rect_x = 0;
 
-                // DrawRectangle(
-                //     screenWidth + rect_x, rect_y, rect_w + 1, rect_h + 1, ColorFromHSV(hue, 1, 1)
-                // );
-                // hue += 25;
-
-                Vector2 pos_in_cell = {
-                    hit.pos.x - hit.cell_pos.x * cell_size,
-                    hit.pos.y - hit.cell_pos.y * cell_size,
-                };
                 float pix_h = rect_h / object.image.height;
-                Vector2 column = pos_in_cell / cell_size * object.image.width;
-                int col = column.y;
+                float column = (ray_i * 1.0f / rays_count) * object.image.width;
+                int col = (int) column;
 
                 for (int i = 0; i < object.image.height; ++i)
                 {
@@ -335,9 +322,15 @@ DrawRaycastView(const player_t &player, const std::vector<object_t> &objects,
                         rect_w + 1, pix_h + 1, pixel
                     );
                 }
-
             }
+            // else
+            // {
+            //     DrawLineEx(player.pos, hit.pos, 2, MAGENTA);
+            // }
         }
+        // DrawLineEx(player.pos, a, 5, BLACK);
+        // DrawLineEx(player.pos, b, 5, PURPLE);
+        // std::cout << "=== END === " << std::endl;
     }
 }
 #endif
@@ -359,21 +352,30 @@ int main()
     std::vector<object_t> objects;
 
     object_t barrel;
-    barrel.pos = { 5 * cell_size, 2 * cell_size };
-    barrel.image = LoadImage("./Assets/textures/walltile.png");
+    barrel.pos = { 3 * cell_size, 5 * cell_size };
+    barrel.image = LoadImage("./Assets/textures/barrel.png");
     objects.push_back(barrel);
+
+    object_t barrel2;
+    barrel2.pos = { 3 * cell_size, 5 * cell_size };
+    barrel2.image = LoadImage("./Assets/textures/barrel.png");
+    objects.push_back(barrel2);
 
 #ifdef RUN_RAYCASTER
     RaycastConfig config;
     config.fov = 60 * DEG2RAD;
-    config.rays_count = 64;
+    config.rays_count = 200;
     config.delta_angle = config.fov / config.rays_count;
     config.rect_w = (screenWidth / config.fov) * config.delta_angle;
 #endif
 
+    float t = 0;
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+        t += dt;
+
+        objects[1].pos.x = 3 * cell_size + 100 * sin(t);
 
         Vector2 move = { 0, 0 };
 #ifdef RUN_RAYCASTER
